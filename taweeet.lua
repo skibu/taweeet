@@ -1,7 +1,9 @@
 -- taweeet
 -- first attempt
 
-include "lib/files"
+include "lib/get"
+
+-- Audio = require "audio"
 
 util = require 'util'
 
@@ -14,10 +16,21 @@ function init()
 end
 
 function key(n, down)
-  print("about to call os_capture()...")
-  ret = getFile("https://httpbin.org/robots.txt", "wav")
-  print("ret=" .. ret)
-
+  print("down="..down)
+  
+  if down == 1 then
+    print("about to call getSpeciesWavFile()...")
+    species = "American Avocet"
+    catalog = "ML72059761"
+    full_filename = getSpeciesWavFile(
+      "https://cdn.download.ams.birds.cornell.edu/api/v2/asset/72059761/mp3", 
+      species, catalog)
+    
+    tbl = getSpeciesTable()
+    print("Species table size=" .. #tbl)
+  end
+  
+  
   if n == 3 then
     engine.hz(100 + 100*down)
   end
@@ -26,3 +39,5 @@ end
 function enc(n, delta)
   print("n=" .. n .. " delta=" .. delta)
 end
+
+
