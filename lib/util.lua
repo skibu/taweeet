@@ -21,3 +21,45 @@ function extents(image_buffer)
   -- Now can just call the extents function on the image buffer and return the results
   return extents_function(image_buffer)
 end  
+
+
+-- For converting a string like a URL to a hash so that it can be used a file name.
+-- Not actually used currently, but could be useful.
+function hash(str)
+    local h = 5381;
+
+    for c in str:gmatch"." do
+        h = ((h << 5) + h) + string.byte(c)
+    end
+    return h
+end
+
+
+-- For encoding a url that has special characters.
+-- From https://gist.github.com/liukun/f9ce7d6d14fa45fe9b924a3eed5c3d99
+local char_to_hex = function(c)
+  return string.format("%%%02X", string.byte(c))
+end
+
+function urlencode(url)
+  if url == nil then
+    return
+  end
+  url = url:gsub("\n", "\r\n")
+  url = url:gsub("([^%w ])", char_to_hex)
+  url = url:gsub(" ", "+")
+  return url
+end
+
+local hex_to_char = function(x)
+  return string.char(tonumber(x, 16))
+end
+
+urldecode = function(url)
+  if url == nil then
+    return
+  end
+  url = url:gsub("+", " ")
+  url = url:gsub("%%(%x%x)", hex_to_char)
+  return url
+end
