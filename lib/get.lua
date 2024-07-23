@@ -72,16 +72,16 @@ function storeRandomPng(species)
   local full_filename = getDirectory(species) .. "/randomForSpecies.png"
   print("For species "..species.." storing random png in file " .. full_filename)
   
-  -- Create a more useful query for Google images. Have found that semi 
-  -- "black and white" images can work better for providing pics with good contrast.
-  -- Include "bird" can be redundant but it avoids strange non-bird pics. And
-  -- including "flying" means that many of the pics will be of the birds flying,
-  -- which are more dynamic and beautiful. And substitute %20 for spaces so the query 
-  -- can be properly sent as query string. And change any right apostrophies used
-  -- by Ithaca bird nerds to a regular apostrophy so that works for sure for query string.
-  -- Actually, for now just use "flying" to see if that provides better pics.
-  --local enhanced_query = ("black and white "..species.." bird flying")
-  local enhanced_query = urlencode(species.." flying")
+  -- Create a more useful query for Google images. 
+  -- Of course ebird.org and macaulaylibrary.org have topnotch pics. So limiting
+  -- pictures to those from those sites.
+  -- Have found that semi "black and white" images can work better for providing pics with 
+  -- good contrast. Can include "bird" can be redundant but it avoids strange non-bird pics.
+  -- And including "flying" can mean that many of the pics will be of the birds flying,
+  -- which are more dynamic and beautiful. But after playing around, only using "flying" 
+  -- for now.
+  local enhanced_query = urlencode("site:ebird.org OR site:macaulaylibrary.org image "..
+    species.." flying")
   print("enhanced_query=" .. enhanced_query)
 
   -- Do curl command to get the random image and store the output into the appropriate 
@@ -117,6 +117,14 @@ local function getJsonTable(url)
   json_str = util.os_capture(cmd)
 
   return json.decode(json_str)
+end
+
+
+-- Gets table of species, but grouped into categories
+function getSpeciesByCategoryTable()
+  species_table = getSpeciesTable()
+  
+  return species_table
 end
 
 
