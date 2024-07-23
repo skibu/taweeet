@@ -42,6 +42,10 @@ function init()
   species = species_table[idx]
   print("In init species="..species)
   
+  -- Get species by category so that can reduce size of the lists
+  species_by_category = getSpeciesByCategoryTable()
+  print("Read in "..#species_by_category.." categories of species")
+  
   -- Load in wav file for species
   print("about to call getSpeciesWavFile()...")
   wav_url = "https://cdn.download.ams.birds.cornell.edu/api/v2/asset/72059761/mp3"
@@ -98,8 +102,19 @@ function redraw()
     text_width = screen.text_extents(species)
   until (text_width <= 128)
   
+  -- rectangle_x is static and easy to determine
   local rectangle_x = (128 - text_width - 2*horiz_padding) / 2
+  
+  -- Since moving downwards but pausing at certain height, rectanble_y is more difficult
+  local rectangle_y_pause = 58 -- Where rectangle should pause
+  local pause_ticks = 20       -- How long to pause there
   local rectangle_y = current_count - font_size - 1
+  if current_count > rectangle_y_pause and current_count <= rectangle_y_pause + pause_ticks then
+    rectangle_y = rectangle_y_pause - font_size - 1
+  elseif current_count > rectangle_y_pause + pause_ticks then
+    rectangle_y = current_count - pause_ticks - font_size - 1
+  end
+  
   screen.level(5)
   screen.rect (rectangle_x, rectangle_y, 
     text_width + 2*horiz_padding, font_size+1)
