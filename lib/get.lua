@@ -120,17 +120,106 @@ local function getJsonTable(url)
 end
 
 
--- Gets table of species, but grouped into categories
-function getSpeciesByCategoryTable()
-  species_table = getSpeciesTable()
+local function isLower(str)
+  local firstChar = string.sub(str, 1, 1)
+  return "a" <= firstChar and firstChar <= "z"
+end
+
   
-  return species_table
+local misc_category = "Misc"
+
+-- Take a species name like "yellow bellied-owl" and returns the last word of, such as "owl"
+local function getCategory(species)
+  local r = species:reverse()
+  local spacer = r:find("[%s-]+")
+  
+  -- If just single word then return misc_category
+  if spacer == nill then return misc_category end
+  
+  -- Return the first word of the reversed string. Need to reverse it again since 
+  -- reversed at beginning.
+  local category = r:sub(1, spacer-1):reverse()
+
+  -- If category is lower case then it is the end part of a double hyphenated name.
+  -- Just return misc_category for this rare situation.
+  if isLower(category) then 
+    return misc_category 
+  end
+
+  return category
 end
 
 
+local species_by_category_table_cache = nil
+local category_list_cache = nil
+
+-- Gets table of species, but grouped into categories
+function getSpeciesByCategoryTable()
+  -- If already have it in cache then return it
+  if species_by_category_table_cache ~= nil then 
+    return species_by_category_table_cache, category_list_cache
+  end
+
+  local species_table = getSpeciesTable()
+  local by_category = {}
+  for _, species in ipairs(species_table) do 
+    -- Determine category name for current species
+    local category = getCategory(species)
+
+    -- Get or create the species_list for the category
+    local species_list = by_category[category]
+    if by_category[category] == nil then 
+      species_list = {}
+      by_category[category] = species_list
+    end
+    
+    table.insert(species_list, species)
+  end
+
+  -- Go through the whole by_catagory table and move single species to the Misc category
+  for category, species_list in pairs(by_category) do
+    if #species_list == 1 then
+      -- Move the solitary species to "Misc" category
+      local misc_species_list = by_category[misc_category]
+      table.insert(misc_species_list, species_list[1])
+      
+      -- Remove the category that had just the solitary species
+      by_category[category] = nil
+    end
+  end
+  
+  -- Create the separate alphabetized array of category names. This needs to be
+  -- a separate table since want to sort it and Lua associative arrays cannot
+  -- be sorted by keys since they are just in a unordered set.
+  -- Also, sort all of the categories. Especially important for the Misc one which just 
+  -- had elements added to it.
+  category_list = {}
+  for category, species_list in pairs(by_category) do
+    table.sort(species_list)
+    table.insert(category_list, category)
+  end
+  table.sort(category_list)
+  
+  -- Remember it in the cache
+  species_by_category_table_cache = by_category
+  category_list_cache = category_list
+  
+  -- Return the table
+  return by_category, category_list
+end
+
+
+local species_table_cache = nil
+
 -- Does a query to the webserver and returns table containing array of species
 function getSpeciesTable()
-  return getJsonTable(hostname .. ":" .. port .. "/speciesList")
+  -- If already have it in cache then return it
+  if species_table_cache ~= nil then return species_table_cache end
+  
+  -- Get and store in cache
+  species_table_cache = getJsonTable(hostname .. ":" .. port .. "/speciesList")
+  
+  return species_table_cache
 end
 
       

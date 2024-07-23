@@ -40,12 +40,16 @@ function init()
   -- Pick a species by random
   local idx = math.random(1, #species_table)
   species = species_table[idx]
-  print("In init species="..species)
+  print("In init. Random species="..species)
   
   -- Get species by category so that can reduce size of the lists
-  species_by_category = getSpeciesByCategoryTable()
-  print("Read in "..#species_by_category.." categories of species")
-  
+  species_by_category, category_list = getSpeciesByCategoryTable()
+  print("Read in "..#category_list.." categories of species")
+  --for i,cat in ipairs(category_list) do
+  --  print("i="..i.. " cat="..cat)
+  --  tab.print(species_by_category[cat])
+  --end
+
   -- Load in wav file for species
   print("about to call getSpeciesWavFile()...")
   wav_url = "https://cdn.download.ams.birds.cornell.edu/api/v2/asset/72059761/mp3"
@@ -132,7 +136,6 @@ function redraw()
   
   if rectangle_y > 64 then
     intro_counter:stop()
-    print("Done with intro so intro_counter stopped")
   end
   
 end
