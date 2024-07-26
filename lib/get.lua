@@ -25,19 +25,25 @@ local port = "8080"
 -- Returns sound file from cache. If file not already in cache it
 -- gets a sound file from the imager website, converts to a wav, stores it, 
 -- and returns the full filename where file stored
-local function getWavFile(url, dir, filename)
+local function getWavFile(url, species, filename)
+  local dir = getSpeciesDirectory(species)
   local full_filename = dir .. "/" .. filename
   
   -- If file doesn't yet exist then get it and store it
   if not util.file_exists(full_filename) then
-    print("Creating wav file " .. full_filename)
+    tprint("Creating wav file " .. full_filename)
     
-    local cmd = "curl --silent --max-time 10 --insecure --create-dirs " .. 
-      "--output " .. filename .. 
+    -- Create curl command that gets and stores the wav file. Note that
+    -- using "&" to execute command in background so that this function
+    -- returns quickly, wihtout waiting for file to be created, downloaded,
+    -- and saved.
+    local cmd = "curl --compressed --silent --max-time 10 --insecure " .. 
+      "--create-dirs --output " .. full_filename .. 
       " --output-dir " .. dir .. 
-      " " .. hostname .. ":" .. port .. "/wavFile?url=" .. url
+      " \"" .. hostname .. ":" .. port .. "/wavFile?url=" .. url ..
+      "&s=".. urlencode(species) .. "\" &"
       
-    print("getWavFile() executing command=" .. cmd)
+    tprint("getWavFile() executing command=" .. cmd)
     util.os_capture(cmd)
   end
   
@@ -51,8 +57,15 @@ end
 -- Returns directory name where wav and png files are to be stored on the norns.
 -- Will be norns.state.data/species/ . Spaces replaced with "_" to make name more 
 -- file system friendly
-function getDirectory(species)
+function getSpeciesDirectory(species)
+  print("FIXME in getSpeciesDirectory() norns.state.data="..norns.state.data)
   return norns.state.data .. species:gsub(" ", "_")
+end
+
+
+-- Returns the main data directory for the app
+function getAppDirectory()
+  return norns.state.data
 end
 
 
@@ -60,7 +73,7 @@ end
 -- file will be stored at norns.state.data/species/catalog.wav . Converts spaces in species
 -- name to "_" so that won't have file system problems.
 function getSpeciesWavFile(url, species, catalog)
-  return getWavFile(url, getDirectory(species), catalog .. ".wav")
+  return getWavFile(url, species, catalog .. ".wav")
 end
 
 
@@ -69,7 +82,7 @@ end
 -- web server instead. The images are pretty small since they are for Norns.
 -- Returns the file name of the random image, along with its width and height in pixels.
 function storeRandomPng(species)
-  local full_filename = getDirectory(species) .. "/randomForSpecies.png"
+  local full_filename = getSpeciesDirectory(species) .. "/randomImageForSpecies.png"
   print("For species "..species.." storing random png in file " .. full_filename)
   
   -- Create a more useful query for Google images. 
@@ -87,8 +100,9 @@ function storeRandomPng(species)
   -- Do curl command to get the random image and store the output into the appropriate 
   -- file for the species
   local cmd = "curl --silent --max-time 10 --insecure --create-dirs " .. 
-    "--output " .. full_filename.. 
-    " " .. hostname .. ":" .. port .. "/getImage?q=" .. enhanced_query
+    "--output \"" .. full_filename .. "\"" ..
+    " \"" .. hostname .. ":" .. port .. "/randomImage?q=" .. enhanced_query .. 
+    "&s=" .. urlencode(species) .. "\"" 
   print("storeRandomPng() executing command=" .. cmd)
   util.os_capture(cmd)
   
@@ -102,7 +116,8 @@ end
 -- Returns an image buffer that can be drawn to the Norns screen. 
 -- It is thought that keeping the image buffer around would allow for
 -- faster screen drawing since wouldn't have to load the PNG from
--- file system everytime.
+-- file system everytime. But currently displaying buffers on the screen
+-- is not reliable.
 function getPngBuffer(species)
   local full_filename = getPngFile(species)
   local image_buffer = screen.load_png(full_filename)
@@ -116,6 +131,7 @@ local function getJsonTable(url)
   print("getJsonTable() executing command=" .. cmd)
   json_str = util.os_capture(cmd)
 
+  -- Turn the json into a Lua table
   return json.decode(json_str)
 end
 
@@ -128,7 +144,8 @@ end
   
 local misc_category = "Misc"
 
--- Take a species name like "yellow bellied-owl" and returns the last word of, such as "owl"
+-- Take a species name like "yellow bellied-owl" and returns the last word of, such 
+-- as "owl". Useful for categorizing all the species into groups.
 local function getCategory(species)
   local r = species:reverse()
   local spacer = r:find("[%s-]+")
@@ -213,13 +230,22 @@ local species_table_cache = nil
 
 -- Does a query to the webserver and returns table containing array of species
 function getSpeciesTable()
+  -- Determine file name for the cache file
+  filename = getAppDirectory() .. "/species.json"
+  
   -- If already have it in cache then return it
-  if species_table_cache ~= nil then return species_table_cache end
+  species_table = readFromFile(filename)
+  if species_table ~= nil then 
+    return species_table 
+  end
   
-  -- Get and store in cache
-  species_table_cache = getJsonTable(hostname .. ":" .. port .. "/speciesList")
+  -- Get the table
+  species_table = getJsonTable(hostname .. ":" .. port .. "/speciesList")
   
-  return species_table_cache
+  -- Store table into file system cache
+  writeToFile(species_table, filename)
+  
+  return species_table
 end
 
       

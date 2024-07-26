@@ -59,7 +59,8 @@ function init()
   -- Load random png for species
   print("Getting random png for species "..species.."...")
   png_filename, png_width, png_height = storeRandomPng(species)
-  print("png_width="..png_width.." png_height="..png_height.." png_filename="..png_filename)
+  print("png_width="..png_width.." png_height="..png_height..
+    " png_filename="..png_filename)
   
   -- Start up the timer
   intro_counter = metro.init(tick, 0.05, -1)

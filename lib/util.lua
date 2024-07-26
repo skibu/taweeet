@@ -1,3 +1,4 @@
+local json = include "lib/json"
 
 -- Wacky function that returns extents of specified image buffer.
 -- This was quite difficult to figure out because had to search
@@ -23,6 +24,39 @@ function extents(image_buffer)
 end  
 
 
+-- Writes table object to a file in json format
+function writeToFile(tbl, filename)
+  local file = assert(io.open(filename, "w"))
+  result = json.encode(tbl)
+  file:write(result)
+  file:close()
+end
+
+
+-- Reads json file and converts the json into a table object and returns it. If the file
+-- doesn't exist then returns nil.
+function readFromFile(filename)
+  if not util.file_exists(filename) then
+    return nil
+  end
+  
+  local file = io.open(filename, "r")
+  local readjson= file:read("*a")
+  local tbl =json.decode(readjson)
+  file:close()
+  return tbl
+end
+
+
+-- Just like print() but also displays time in seconds since app started, and with
+-- a very high resolution. Useful for seeing at a glance how long something took.
+function tprint(obj)
+  if obj == nil then obj = "nil" end
+  
+  print(clock.get_beats() .. " - " .. obj)
+end
+  
+  
 -- For converting a string like a URL to a hash so that it can be used a file name.
 -- Not actually used currently, but could be useful.
 function hash(str)
