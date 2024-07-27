@@ -1,6 +1,5 @@
-local json = include "lib/json"
 
--- Wacky function that returns extents of specified image buffer.
+-- Wacky useful function that returns extents of specified image buffer.
 -- This was quite difficult to figure out because had to search
 -- around to find out about userdata objects and getmetatable(),
 -- and then look at the weaver.c source code to find out about
@@ -24,27 +23,27 @@ function extents(image_buffer)
 end  
 
 
--- Writes table object to a file in json format
-function writeToFile(tbl, filename)
-  local file = assert(io.open(filename, "w"))
-  result = json.encode(tbl)
-  file:write(result)
-  file:close()
+-- Displays info for the specified wav file. Useful for seeing that 
+-- the wav file has proper format.
+function print_wav_file_info(file)
+  if util.file_exists(file) == true then
+    local ch, samples, samplerate = audio.file_info(file)
+    local duration = samples/samplerate
+    print("loading file: "..file)
+    print("  channels:\t"..ch)
+    print("  samples:\t"..samples)
+    print("  sample rate:\t"..samplerate.."hz")
+    print("  duration:\t"..duration.." sec")
+  else 
+    print "read_wav(): file not found" 
+  end
 end
 
 
--- Reads json file and converts the json into a table object and returns it. If the file
--- doesn't exist then returns nil.
-function readFromFile(filename)
-  if not util.file_exists(filename) then
-    return nil
-  end
-  
-  local file = io.open(filename, "r")
-  local readjson= file:read("*a")
-  local tbl =json.decode(readjson)
-  file:close()
-  return tbl
+-- Returns true if first char of string is lower case
+function isLower(str)
+  local firstChar = string.sub(str, 1, 1)
+  return "a" <= firstChar and firstChar <= "z"
 end
 
 
@@ -55,17 +54,26 @@ function tprint(obj)
   
   print(clock.get_beats() .. " - " .. obj)
 end
-  
-  
--- For converting a string like a URL to a hash so that it can be used a file name.
--- Not actually used currently, but could be useful.
-function hash(str)
-    local h = 5381;
 
-    for c in str:gmatch"." do
-        h = ((h << 5) + h) + string.byte(c)
-    end
-    return h
+
+-- For finding the directory of a file. Useful for creating file in a directory that
+-- doesn't already exist
+function getDir(full_filename)
+    local last_slash = (full_filename:reverse()):find("/")
+    return (full_filename:sub(1, -last_slash))
+end
+
+
+-- If it doesn't already exist, creates directory for a file that is about to be written
+function createDir(full_filename) 
+  -- Determine directory that needs to exist
+  local dir = getDir(full_filename)
+  
+  -- If directory already exists then don't need to create it
+  if util.file_exists(dir) then return end
+  
+  -- Directory didn't exist so create it
+  os.execute("mkdir "..dir)
 end
 
 
