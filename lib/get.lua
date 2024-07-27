@@ -155,7 +155,7 @@ local misc_category = "Misc"
 
 -- Take a species name like "yellow bellied-owl" and returns the last word of, such 
 -- as "owl". Useful for categorizing all the species into groups.
-local function getCategory(species)
+local function getCategoryName(species)
   local r = species:reverse()
   local spacer = r:find("[%s-]+")
   
@@ -176,12 +176,23 @@ local function getCategory(species)
 end
 
 
+local _species_by_category_table_cache = nil
+local _category_table_cache = nil
+
 -- Returns two tables. First is an associative array keyed by category name and with values
 -- that are alphabetized lists of species for the category. Second table is an alphatized list
 -- of categories. The reason two separate tables are returned is because with Lua an
 -- associative array cannot be sorted by keys. So an alphatized list of categories has to be 
 -- provided in a separate array, one that is ordered instead of being associative.
+-- Two levels of caching. There is a memory cache so that can always access the values quickly
+-- via this function. But the tables are also cached as files so that at startup can just
+-- read the info from files instead of getting it from the much slower Imager API.
 function getSpeciesByCategoryTable()
+  -- If already cached in memory then just return cache values
+  if _species_by_category_table_cache ~= nil and _category_table_cache ~= nil then
+    return _species_by_category_table_cache, _category_table_cache
+  end
+  
   -- Determine file names for the cache files
   local species_by_category_cache_filename = getAppDirectory() .. "/speciesByCategory.json"
   local category_cache_filename = getAppDirectory() .. "/category.json"
@@ -189,7 +200,11 @@ function getSpeciesByCategoryTable()
   -- If already have both tables in cache then return them
   species_by_category_table = readFromFile(species_by_category_cache_filename)
   category_table = readFromFile(category_cache_filename)
-  if species_by_category_table ~= nil and category_table ~= nil then 
+  if species_by_category_table ~= nil and category_table ~= nil then
+    -- Store the data from the file cache into memory cache
+    _species_by_category_table_cache = species_by_category_table
+    _category_table_cache = category_table
+    
     return species_by_category_table, category_table
   end
   
@@ -197,7 +212,7 @@ function getSpeciesByCategoryTable()
   local by_category = {}
   for _, species_name in ipairs(species_table) do 
     -- Determine category name for current species
-    local category = getCategory(species_name)
+    local category = getCategoryName(species_name)
 
     -- Get or create the species_list for the category
     local species_list = by_category[category]
@@ -237,19 +252,35 @@ function getSpeciesByCategoryTable()
   writeToFile(by_category, species_by_category_cache_filename)
   writeToFile(category_list, category_cache_filename)
   
+  -- Also, store the data into memory cache
+  _species_by_category_table_cache = by_category
+  _category_table_cache = category_list
+
   -- Return the table
   return by_category, category_list
 end
 
 
--- Does a query to the webserver and returns table containing array of all species names
+local _species_table_cache = nil
+
+-- Does a query to the webserver and returns table containing array of all species names.
+-- Caches the value in both memory for super quick access, and on the file system so that
+-- works fast across application restarts.
 function getSpeciesTable()
+  -- Use table from memory cache if it is there
+  if _species_table_cache ~= nill then
+    return _species_table_cache
+  end
+  
   -- Determine file name for the cache file
   local cache_filename = getAppDirectory() .. "/species.json"
 
   -- If already have it in cache then return it
   local species_table = readFromFile(cache_filename)
   if species_table ~= nil then 
+    -- Store in memory cache
+    _species_table_cache = species_table
+    
     return species_table 
   end
   
@@ -258,6 +289,9 @@ function getSpeciesTable()
   
   -- Store table into file system cache
   writeToFile(species_table, cache_filename)
+  
+  -- Store in memory cache
+  _species_table_cache = species_table
   
   return species_table
 end
