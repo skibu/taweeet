@@ -1,19 +1,19 @@
 -- Taweeet
 -- Because birdsong is beautiful
--- 0.0.3 attempt
+-- 0.0.6 attempt
 --
--- Click on N3 to start
+-- Click on K3 to start
 
 include "lib/get"
 include "lib/util"
 include "lib/cache"
-
+include "lib/softcutUtil"
 
 debug = false
 current_count = 0 -- incremented every clock tick
 
 -- So can play a simple sound
-engine.name = "TestSine"
+-- FIXME engine.name = "TestSine"
 
 
 local global_species_name, global_png_filename, global_png_width, global_png_height = nil, nil, nil, nil
@@ -44,25 +44,28 @@ local function initRandomSpecies()
   species_data = getSpeciesData(random_species_name)
 
   -- Pick random png url for the species
-  image_data_list = species_data.imageDataList
+  local image_data_list = species_data.imageDataList
   local image_idx = math.random(1, #image_data_list)
-  image_data_tbl = image_data_list[image_idx]
-  png_url = image_data_tbl.image_url
-  png_filename = getPng(png_url, random_species_name)
-  png_width, png_height = extents(screen.load_png(png_filename))
+  local image_data_tbl = image_data_list[image_idx]
+  local png_url = image_data_tbl.image_url
+  local png_filename = getPng(png_url, random_species_name)
+  local png_width, png_height = extents(screen.load_png(png_filename))
     
   -- Pick random wav file url for the species
   --get url from species_data
-  audio_data_list = species_data.audioDataList
+  local audio_data_list = species_data.audioDataList
   local audio_idx = math.random(1, #audio_data_list)
-  audio_data = audio_data_list[audio_idx]
-  wav_url = audio_data.audio_url
+  local audio_data = audio_data_list[audio_idx]
+  local wav_url = audio_data.audio_url
   wav_filename = getWav(wav_url, random_species_name)
 
   -- Keep track of the info needed to display the species image and name on the screen
   set_species_globals(random_species_name, png_filename, png_width, png_height)
   
   print("Finished initing for species="..random_species_name)
+  
+  -- Play the wav file
+  softcut_setup(wav_filename, 1, 1)
 end
 
 
@@ -70,7 +73,7 @@ function init()
   print("initing...")
   
   -- Initialize sound engine
-  engine.hz(300)
+  -- FIXME engine.hz(300)
   
   --Load in a species
   initRandomSpecies()
@@ -78,6 +81,9 @@ function init()
   -- Start up the timer
   intro_counter = metro.init(tick, 0.05, -1)
   intro_counter:start()
+  
+  -- Startup softcut
+  softcut_init()
 end
 
 
@@ -160,7 +166,7 @@ function key(n, down)
   end
   
   if n == 2 then
-    engine.hz(100 + 100*down)
+    -- FIXME engine.hz(100 + 100*down)
   end
 end
 

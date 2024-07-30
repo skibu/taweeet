@@ -23,23 +23,6 @@ function extents(image_buffer)
 end  
 
 
--- Displays info for the specified wav file. Useful for seeing that 
--- the wav file has proper format.
-function print_wav_file_info(file)
-  if util.file_exists(file) == true then
-    local ch, samples, samplerate = audio.file_info(file)
-    local duration = samples/samplerate
-    print("loading file: "..file)
-    print("  channels:\t"..ch)
-    print("  samples:\t"..samples)
-    print("  sample rate:\t"..samplerate.."hz")
-    print("  duration:\t"..duration.." sec")
-  else 
-    print "read_wav(): file not found" 
-  end
-end
-
-
 -- Returns true if first char of string is lower case
 function isLower(str)
   local firstChar = string.sub(str, 1, 1)

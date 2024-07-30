@@ -56,7 +56,7 @@ function getWav(url, species_name)
       "--create-dirs --output " .. filename .. 
       " --output-dir " .. dir .. 
       " \"" .. hostname .. ":" .. port .. "/wavFile?url=" .. url ..
-      "&s=".. urlencode(species_name) .. "\" &"
+      "&s=".. urlencode(species_name) .. "\" " -- FIXME might want to do this in background using &
       
     util.os_capture(cmd)
     tprint("getWavFile() executed command=" .. cmd)
