@@ -12,18 +12,18 @@ include "lib/cache"
 debug = false
 current_count = 0 -- incremented every clock tick
 
-png_filename, png_width, png_height = nil, nil, nil
-
 -- So can play a simple sound
 engine.name = "TestSine"
 
 
-local global_current_species_name
+local global_species_name, global_png_filename, global_png_width, global_png_height = nil, nil, nil, nil
 
--- Loads in all the info for the species
-local function select_species(species_name)
-  -- Keep track of the selected species so that it can be redrawn
-  global_current_species_name = species_name
+-- Set the globals for the species at once
+local function set_species_globals(species_name, png_filename, png_width, png_height)
+  global_species_name = species_name
+  global_png_filename = png_filename
+  global_png_width = png_width
+  global_png_height = png_height
 end
 
 
@@ -31,38 +31,38 @@ end
 -- for the species. Returns table containing all of the data associated with the
 -- selected species.
 local function initRandomSpecies()
+  print("Determining a random species to use...")
+  
   -- Get list of species
-  local species_table = getSpeciesTable()
+  local species_list = getSpeciesList()
 
-  -- Pick a species by random
-  local idx = math.random(1, #species_table)
-  local species_name = species_table[idx]
+  -- Pick a species name by random
+  local idx = math.random(1, #species_list)
+  local random_species_name = species_list[idx]
 
-  -- Get info about and load the images associated with the species
-  local species_image_data = getImageDataForSpecies(species_name)
+  -- Load in config for the species
+  species_data = getSpeciesData(random_species_name)
 
-  -- Get info about and load the audio associated with the species
-  local species_audio_data = getAudioDataForSpecies(species_name)
+  -- Pick random png url for the species
+  image_data_list = species_data.imageDataList
+  local image_idx = math.random(1, #image_data_list)
+  image_data_tbl = image_data_list[image_idx]
+  png_url = image_data_tbl.image_url
+  png_filename = getPng(png_url, random_species_name)
+  png_width, png_height = extents(screen.load_png(png_filename))
+    
+  -- Pick random wav file url for the species
+  --get url from species_data
+  audio_data_list = species_data.audioDataList
+  local audio_idx = math.random(1, #audio_data_list)
+  audio_data = audio_data_list[audio_idx]
+  wav_url = audio_data.audio_url
+  wav_filename = getWav(wav_url, random_species_name)
 
-  -- FIXME dealing with global species object
-  select_species(species_name)
+  -- Keep track of the info needed to display the species image and name on the screen
+  set_species_globals(random_species_name, png_filename, png_width, png_height)
   
-  species = {}
-  species.name = species_name
-  species.image_data = species_image_data
-  species.audio_data = species_audio_data
-  
-  print("FIXME The full species is:")
-  tab.print(species)
-  writeToFile(species, getSpeciesDirectory(species_name).."/species_data.json")
-  
-  -- Load random png for species. THIS IS JUST TEMPORARY!
-  print("Getting random png for species "..species_name.."...")
-  png_filename, png_width, png_height = storeRandomPng(species_name)
-  print("png_width="..png_width.." png_height="..png_height..
-    " png_filename="..png_filename)
-
-  return species_name
+  print("Finished initing for species="..random_species_name)
 end
 
 
@@ -72,24 +72,8 @@ function init()
   -- Initialize sound engine
   engine.hz(300)
   
-  -- Select a random species to start with
-  local species_name = initRandomSpecies()
-  print("Random species read in=".. species_name)
-  
-  -- Get species by category so can create selectors for category and for species.
-  -- This will be implemented later.
-  species_by_category, category_list = getSpeciesByCategoryTable()
-  print("Read in "..#category_list.." categories of species")
-
-  -- For testing only: Load in wav file for species
-  print("about to call getSpeciesWavFile()...")
-  wav_url = "https://cdn.download.ams.birds.cornell.edu/api/v2/asset/72059761/mp3"
-  catalog = "ML72059761" -- FIXME
-  wav_filename = getSpeciesWavFile(wav_url, species_name, catalog)
-  -- For debugging. Note that since wav file being retrieved in background that
-  -- it probably doesn't exist yet and will just get an error message.
-  print("FIXME readin wav file wav_filename="..wav_filename)
-  print_wav_file_info(wav_filename)
+  --Load in a species
+  initRandomSpecies()
       
   -- Start up the timer
   intro_counter = metro.init(tick, 0.05, -1)
@@ -111,26 +95,16 @@ function redraw()
   -- Always start by clearing screen
   screen.clear()
   
-  -- Draw some vertically moving text just for fun
-  if debug then
-    screen.level(15)
-    screen.aa(1)
-    screen.font_face(4)
-    screen.font_size(10)
-    screen.move(0,current_count)
-    screen.text("vertical text ".. current_count)
-  end
-  
   -- Draw moving image. Have it scroll left to right until it is in the middle of screen
-  --screen.display_png(png_filename, (128-png_width)/2, (64-png_height)/2)
-  local png_y = (64-png_height)/2
-  local png_x = -png_width + 6*current_count
-  if png_x > (128-png_width)/2 then 
+  --screen.display_png(global_png_filename, (128-global_png_width)/2, (64-global_png_height)/2)
+  local png_y = (64-global_png_height)/2
+  local png_x = -global_png_width + 6*current_count
+  if png_x > (128-global_png_width)/2 then 
     -- Reached desired horizontal position so don't increase png_x anymore
     if debug then print("png centered!") end
-    png_x = (128-png_width)/2
+    png_x = (128-global_png_width)/2
   end
-  screen.display_png(png_filename, png_x, png_y)
+  screen.display_png(global_png_filename, png_x, png_y)
 
   -- Draw some vertically moving name of the species.
   -- First draw a darker rectangle so text will be readable. And to
@@ -141,7 +115,7 @@ function redraw()
   repeat  
     font_size = font_size - 1
     screen.font_size(font_size)
-    text_width = screen.text_extents(global_current_species_name)
+    text_width = screen.text_extents(global_species_name)
   until (text_width <= 128)
   
   -- rectangle_x is static and easy to determine
@@ -157,15 +131,16 @@ function redraw()
     rectangle_y = current_count - pause_ticks - font_size - 1
   end
   
+  -- Draw rectangle on screen so that text shows up better
   screen.level(5)
-  screen.rect (rectangle_x, rectangle_y, 
-    text_width + 2*horiz_padding, font_size+1)
+  screen.rect (rectangle_x, rectangle_y, text_width + 2*horiz_padding, font_size+1)
   screen.fill()
   
+  -- Draw species name on screen over the rectangle
   screen.level(15)
   screen.aa(1)
   screen.move(rectangle_x + horiz_padding, rectangle_y - 2 + font_size)
-  screen.text(global_current_species_name)
+  screen.text(global_species_name)
   
   -- update so that drawing actually visible
   screen.update()

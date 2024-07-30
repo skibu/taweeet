@@ -9,13 +9,41 @@ local hostname = "http://192.168.0.85"
 local port = "8080"
 
 
+function getPng(url, species_name)
+  local dir = getSpeciesDirectory(species_name)
+  local filename = "image_"..hash(url)..".png"
+  local full_filename = dir .. "/" .. filename
+  
+  -- If file doesn't yet exist then get it and store it
+  if not util.file_exists(full_filename) then
+    tprint("Creating png file " .. full_filename)
+    
+    -- Create curl command that gets and stores the wav file. Note that
+    -- using "&" to execute command in background so that this function
+    -- returns quickly, wihtout waiting for file to be created, downloaded,
+    -- and saved.
+    local cmd = "curl --compressed --silent --max-time 10 --insecure " .. 
+      "--create-dirs --output " .. filename .. 
+      " --output-dir " .. dir .. 
+      " \"" .. hostname .. ":" .. port .. "/pngFile?url=" .. url ..
+      "&s=".. urlencode(species_name) .. "\"" 
+      
+    util.os_capture(cmd)
+    tprint("getPng() executed command=" .. cmd)
+  end
+  
+  return full_filename
+end
+
+
 -- Returns sound file for the species. If file not already in cache it
 -- gets a sound file from the imager website, converts to a wav, stores it, 
 -- and returns the full filename where file stored
-local function getWavFile(url, species, filename)
-  local dir = getSpeciesDirectory(species)
+function getWav(url, species_name)
+  local dir = getSpeciesDirectory(species_name)
+  local filename = "audio_"..hash(url)..".wav"
   local full_filename = dir .. "/" .. filename
-  
+
   -- If file doesn't yet exist then get it and store it
   if not util.file_exists(full_filename) then
     tprint("Creating wav file " .. full_filename)
@@ -28,12 +56,12 @@ local function getWavFile(url, species, filename)
       "--create-dirs --output " .. filename .. 
       " --output-dir " .. dir .. 
       " \"" .. hostname .. ":" .. port .. "/wavFile?url=" .. url ..
-      "&s=".. urlencode(species) .. "\" " -- MIGHT WANT TO ADD & TO RUN IN BACKGROUND
+      "&s=".. urlencode(species_name) .. "\" &"
       
-    tprint("getWavFile() executing command=" .. cmd)
     util.os_capture(cmd)
+    tprint("getWavFile() executed command=" .. cmd)
   end
-  
+
   return full_filename
 end
 
@@ -60,47 +88,6 @@ function getSpeciesWavFile(url, species, catalog)
 end
 
 
--- Returns proper query for doing bird image search for the species. The query
--- is already encoded.
-local function imageQuery(species_name)
-  -- Create a more useful query for Google images. 
-  -- Of course ebird.org and macaulaylibrary.org have topnotch pics. So limiting
-  -- pictures to those from those sites.
-  -- Have found that semi "black and white" images can work better for providing pics with 
-  -- good contrast. Can include "bird" can be redundant but it avoids strange non-bird pics.
-  -- And including "flying" can mean that many of the pics will be of the birds flying,
-  -- which are more dynamic and beautiful. But after playing around, only using "flying" 
-  -- for now.
-  local enhanced_query = urlencode("site:ebird.org OR site:macaulaylibrary.org image "..
-    species_name.." flying")
-  return enhanced_query
-end
-
-
--- Returns filename of random png  for the species using the imager website. Doesn't 
--- use cache since want to get new random image each time. Caching is done on imager
--- web server instead. The images are pretty small since they are for Norns.
--- Returns the file name of the random image, along with its width and height in pixels.
-function storeRandomPng(species_name)
-  local full_filename = getSpeciesDirectory(species_name) .. "/randomImageForSpecies.png"
-  print("For species "..species_name.." storing random png in file " .. full_filename)
-  
-  -- Do curl command to get the random image and store the output into the appropriate 
-  -- file for the species
-  local cmd = "curl --silent --max-time 10 --insecure --create-dirs " .. 
-    "--output \"" .. full_filename .. "\"" ..
-    " \"" .. hostname .. ":" .. port .. "/randomImage?q=" .. imageQuery(species_name) .. 
-    "&s=" .. urlencode(species_name) .. "\"" 
-  print("storeRandomPng() executing command=" .. cmd)
-  util.os_capture(cmd)
-  
-  -- Determine width and height of png 
-  w, h = extents(screen.load_png(full_filename))
-  
-  return full_filename, w, h
-end
-
-
 -- Returns an image buffer that can be drawn to the Norns screen. 
 -- It is thought that keeping the image buffer around would allow for
 -- faster screen drawing since wouldn't have to load the PNG from
@@ -114,186 +101,67 @@ end
 
 
 -- Gets JSON from a URL and returns it as a Lua table
-local function getJsonTable(url)
+local function getLuaTable(url)
   local cmd = "curl --silent --max-time 10 --insecure \""  .. url .. "\""
-  print("getJsonTable() executing command=" .. cmd)
   local json_str = util.os_capture(cmd)
 
   -- Turn the json into a Lua table
-  return json.decode(json_str)
+  lua_table = json.decode(json_str)
+  return lua_table
 end
 
 
 -- Executes specified command for the Imager server and returns Lua
 -- table made up of the returned JSON.
-local function getJsonTableFromImager(command)
-  return getJsonTable(hostname .. ":" .. port .. command)
+local function getLuaTableFromImager(command)
+  lua_table = getLuaTable(hostname .. ":" .. port .. command)
+  return lua_table
 end
 
   
--- Gets the image information for the species and return it in a table object
-function getImageDataForSpecies(species_name)
-  image_data = getJsonTableFromImager("/imageDataForSpecies?s="..urlencode(species_name)..
-    "&q="..imageQuery(species_name))
-
+-- Gets the data associated with the specified species. Includes list urls for 
+-- both images and audio.  
+function getSpeciesData(species_name)
+  local species_data = getLuaTableFromImager("/dataForSpecies?s="..urlencode(species_name))
   -- Turn the json into a Lua table
-  return image_data
-end
-
-
--- Gets the audio information for the species and return it in a table object
-function getAudioDataForSpecies(species_name)
-  audio_data = getJsonTableFromImager("/audioDataForSpecies?s="..urlencode(species_name)..
-    "&q="..imageQuery(species_name))
-
-  -- Turn the json into a Lua table
-  return audio_data
+  return species_data
 end
 
   
-local misc_category = "Misc"
-
--- Take a species name like "yellow bellied-owl" and returns the last word of, such 
--- as "owl". Useful for categorizing all the species into groups.
-local function getCategoryName(species)
-  local r = species:reverse()
-  local spacer = r:find("[%s-]+")
-  
-  -- If just single word then return misc_category
-  if spacer == nill then return misc_category end
-  
-  -- Return the first word of the reversed string. Need to reverse it again since 
-  -- reversed at beginning.
-  local category = r:sub(1, spacer-1):reverse()
-
-  -- If category is lower case then it is the end part of a double hyphenated name.
-  -- Just return misc_category for this rare situation.
-  if isLower(category) then 
-    return misc_category 
-  end
-
-  return category
-end
-
-
-local _species_by_category_table_cache = nil
-local _category_table_cache = nil
-
--- Returns two tables. First is an associative array keyed by category name and with values
--- that are alphabetized lists of species for the category. Second table is an alphatized list
--- of categories. The reason two separate tables are returned is because with Lua an
--- associative array cannot be sorted by keys. So an alphatized list of categories has to be 
--- provided in a separate array, one that is ordered instead of being associative.
--- Two levels of caching. There is a memory cache so that can always access the values quickly
--- via this function. But the tables are also cached as files so that at startup can just
--- read the info from files instead of getting it from the much slower Imager API.
-function getSpeciesByCategoryTable()
-  -- If already cached in memory then just return cache values
-  if _species_by_category_table_cache ~= nil and _category_table_cache ~= nil then
-    return _species_by_category_table_cache, _category_table_cache
-  end
-  
-  -- Determine file names for the cache files
-  local species_by_category_cache_filename = getAppDirectory() .. "/speciesByCategory.json"
-  local category_cache_filename = getAppDirectory() .. "/category.json"
-
-  -- If already have both tables in cache then return them
-  species_by_category_table = readFromFile(species_by_category_cache_filename)
-  category_table = readFromFile(category_cache_filename)
-  if species_by_category_table ~= nil and category_table ~= nil then
-    -- Store the data from the file cache into memory cache
-    _species_by_category_table_cache = species_by_category_table
-    _category_table_cache = category_table
-    
-    return species_by_category_table, category_table
-  end
-  
-  local species_table = getSpeciesTable()
-  local by_category = {}
-  for _, species_name in ipairs(species_table) do 
-    -- Determine category name for current species
-    local category = getCategoryName(species_name)
-
-    -- Get or create the species_list for the category
-    local species_list = by_category[category]
-    if by_category[category] == nil then 
-      species_list = {}
-      by_category[category] = species_list
-    end
-    
-    table.insert(species_list, species_name)
-  end
-  
-  -- Go through the whole by_catagory table and move single species to the Misc category
-  for category, species_list in pairs(by_category) do
-    if #species_list == 1 then
-      -- Move the solitary species to "Misc" category
-      local misc_species_list = by_category[misc_category]
-      table.insert(misc_species_list, species_list[1])
-      
-      -- Remove the category that had just the solitary species
-      by_category[category] = nil
-    end
-  end
-  
-  -- Create the separate alphabetized array of category names. This needs to be
-  -- a separate table since want to sort it and Lua associative arrays cannot
-  -- be sorted by keys since they are just in a unordered set.
-  -- Also, sort all of the categories. Especially important for the Misc one which just 
-  -- had elements added to it.
-  local category_list = {}
-  for category, species_list in pairs(by_category) do
-    table.sort(species_list)
-    table.insert(category_list, category)
-  end
-  table.sort(category_list)
-  
-  -- Store tables into file system cache
-  writeToFile(by_category, species_by_category_cache_filename)
-  writeToFile(category_list, category_cache_filename)
-  
-  -- Also, store the data into memory cache
-  _species_by_category_table_cache = by_category
-  _category_table_cache = category_list
-
-  -- Return the table
-  return by_category, category_list
-end
-
-
-local _species_table_cache = nil
+local _species_list_cache = nil
 
 -- Does a query to the webserver and returns table containing array of all species names.
 -- Caches the value in both memory for super quick access, and on the file system so that
 -- works fast across application restarts.
-function getSpeciesTable()
+function getSpeciesList()
   -- Use table from memory cache if it is there
-  if _species_table_cache ~= nill then
-    return _species_table_cache
+  if _species_list_cache ~= nil then
+    return _species_list_cache
   end
   
   -- Determine file name for the cache file
-  local cache_filename = getAppDirectory() .. "/species.json"
+  local cache_filename = getAppDirectory() .. "/speciesList.json"
 
   -- If already have it in cache then return it
-  local species_table = readFromFile(cache_filename)
-  if species_table ~= nil then 
+  readFromFile(cache_filename)
+  local species_list = readFromFile(cache_filename)
+  if species_list ~= nil then 
     -- Store in memory cache
-    _species_table_cache = species_table
+    _species_list_cache = species_list
     
-    return species_table 
+    return species_list
   end
   
   -- Get the table
-  local species_table = getJsonTableFromImager("/speciesList")
-  
+  local species_list = getLuaTableFromImager("/speciesList")
+
   -- Store table into file system cache
-  writeToFile(species_table, cache_filename)
+  writeToFile(species_list, cache_filename)
   
   -- Store in memory cache
-  _species_table_cache = species_table
+  _species_list_cache = species_list
   
-  return species_table
+  return species_list
 end
 
       

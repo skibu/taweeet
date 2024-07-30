@@ -20,7 +20,9 @@ end
 -- doesn't exist then returns nil.
 function readFromFile(filename)
   -- If file doesn't exist just return nil
-  if not util.file_exists(filename) then return nil end
+  if not util.file_exists(filename) then
+    return nil
+  end
   
   -- Get json contents of file
   local file = io.open(filename, "r")
@@ -36,12 +38,14 @@ end
 
   
 -- For converting a string like a URL to a hash so that it can be used a file name.
--- Not actually used currently, but could be useful.
+-- Returns string that is 10 chars long.
 function hash(str)
     local h = 5381;
 
     for c in str:gmatch"." do
         h = ((h << 5) + h) + string.byte(c)
     end
-    return h
+    
+    -- Only return chars 2-11 so don't get possible '-' and only get 10 chars
+    return string.sub(tostring(h), 2, 11)
 end
