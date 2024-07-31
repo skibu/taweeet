@@ -39,7 +39,8 @@ local function initRandomSpecies()
   -- Pick a species name by random
   local idx = math.random(1, #species_list)
   local random_species_name = species_list[idx]
-
+  print("Using species "..random_species_name)
+  
   -- Load in config for the species
   species_data = getSpeciesData(random_species_name)
 
@@ -72,6 +73,9 @@ end
 function init()
   print("initing...")
   
+  -- Startup softcut
+  softcut_init()
+
   -- Initialize sound engine
   -- FIXME engine.hz(300)
   
@@ -81,9 +85,6 @@ function init()
   -- Start up the timer
   intro_counter = metro.init(tick, 0.05, -1)
   intro_counter:start()
-  
-  -- Startup softcut
-  softcut_init()
 end
 
 

@@ -51,12 +51,15 @@ function getWav(url, species_name)
     -- Create curl command that gets and stores the wav file. Note that
     -- using "&" to execute command in background so that this function
     -- returns quickly, wihtout waiting for file to be created, downloaded,
-    -- and saved.
+    -- and saved. 
+    -- Note: thought could speed up response by adding '&' to end of command 
+    -- so that it would run in backgroiund and therefore return immediately.
+    -- But timing showed that this did not speed things up at all.
     local cmd = "curl --compressed --silent --max-time 10 --insecure " .. 
       "--create-dirs --output " .. filename .. 
       " --output-dir " .. dir .. 
       " \"" .. hostname .. ":" .. port .. "/wavFile?url=" .. url ..
-      "&s=".. urlencode(species_name) .. "\" " -- FIXME might want to do this in background using &
+      "&s=".. urlencode(species_name) .. "\" " 
       
     util.os_capture(cmd)
     tprint("getWavFile() executed command=" .. cmd)

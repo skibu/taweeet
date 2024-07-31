@@ -1,11 +1,13 @@
 -- Startup
 function softcut_init()
-    softcut.buffer_clear()
+  softcut.buffer_clear()
 end
   
 
 -- Simple setup of looping a single mono channel using buffer1 and voice1   
 function softcut_setup(filename, buffer_index, voice_index) 
+  --FIXME filename = _path.dust.."code/softcut-studies/lib/whirl1.aif"
+  print("softcut_setup() buffer_index="..buffer_index.." voice_index="..voice_index.." filename="..filename)
   local buffer = softcut_load_file_mono(filename, buffer_index)
 
   softcut_reset_voice(voice_index, buffer_index, buffer.length)
@@ -22,7 +24,7 @@ function softcut_load_file_mono(filename, buffer_index)
   
   softcut.buffer_read_mono(filename,
     0,  -- start at beginning of file
-    0,  -- load into beginning of buffer
+    0,  -- load into beginning of buffer 
     -1, -- duration. -1 means read as much as possible
     1,  -- Load just channel 1. If want stereo then use buffer_read_stereo(), but uses both buffers
     buffer_index)
@@ -63,7 +65,7 @@ function softcut_reset_voice(voice_index, buffer_index, length)
   -- Play till end of loop, length of loop seconds
   softcut.loop_end(voice_index, length)
 
-  -- Where to stop playing, in seconds
+  -- Where to start playing, in seconds
   softcut.position(voice_index, 0.0)
 
   -- Playback speed. 1.0 is normal speed
