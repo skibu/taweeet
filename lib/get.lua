@@ -11,7 +11,7 @@ local port = "8080"
 
 function getPng(url, species_name)
   local dir = getSpeciesDirectory(species_name)
-  local filename = "image_"..hash(url)..".png"
+  local filename = "image_"..file_identifier(url)..".png"
   local full_filename = dir .. "/" .. filename
   
   -- If file doesn't yet exist then get it and store it
@@ -41,7 +41,7 @@ end
 -- and returns the full filename where file stored
 function getWav(url, species_name)
   local dir = getSpeciesDirectory(species_name)
-  local filename = "audio_"..hash(url)..".wav"
+  local filename = "audio_"..file_identifier(url)..".wav"
   local full_filename = dir .. "/" .. filename
 
   -- If file doesn't yet exist then get it and store it
