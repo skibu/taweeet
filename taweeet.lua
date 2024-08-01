@@ -8,6 +8,8 @@ include "lib/get"
 include "lib/util"
 include "lib/cache"
 include "lib/softcutUtil"
+include "lib/parameters"
+
 
 debug = false
 current_count = 0 -- incremented every clock tick
@@ -75,6 +77,8 @@ function init()
   
   -- Startup softcut
   softcut_init()
+
+  parameters_init()
 
   -- Initialize sound engine
   -- FIXME engine.hz(300)

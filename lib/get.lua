@@ -167,4 +167,39 @@ function getSpeciesList()
   return species_list
 end
 
-      
+
+local _groups_list_cache = nil
+
+-- Does a query to the webserver and returns table containing array of all group names.
+-- Caches the value in both memory for super quick access, and on the file system so that
+-- works fast across application restarts.
+function getGroupsList()
+  -- Use table from memory cache if it is there
+  if _groups_list_cache ~= nil then
+    return _groups_list_cache
+  end
+  
+  -- Determine file name for the cache file
+  local cache_filename = getAppDirectory() .. "/groupsList.json"
+
+  -- If already have it in cache then return it
+  readFromFile(cache_filename)
+  local groups_list = readFromFile(cache_filename)
+  if groups_list ~= nil then 
+    -- Store in memory cache
+    _groups_list_cache = groups_list
+    
+    return groups_list
+  end
+  
+  -- Get the table
+  local groups_list = getLuaTableFromImager("/groupsList")
+
+  -- Store table into file system cache
+  writeToFile(groups_list, cache_filename)
+  
+  -- Store in memory cache
+  _groups_list_cache = groups_list
+  
+  return groups_list
+end
