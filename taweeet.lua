@@ -66,7 +66,7 @@ local function initRandomSpecies()
   print("Finished initing for species="..random_species_name)
   
   -- Play the wav file
-  softcut_setup(wav_filename, 1, 1)
+  softcut_setup_stereo(wav_filename, 1, 2) 
 end
 
 

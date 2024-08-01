@@ -4,47 +4,97 @@ function softcut_init()
 end
   
 
--- Simple setup of looping a single mono channel using buffer1 and voice1   
-function softcut_setup(filename, buffer_index, voice_index) 
+-- Simple setup of looping two stereo channels using buffers 1 & 2 and voice1   
+function softcut_setup_stereo(filename, voice_index_l, voice_index_r) 
   --FIXME filename = _path.dust.."code/softcut-studies/lib/whirl1.aif"
-  print("softcut_setup() buffer_index="..buffer_index.." voice_index="..voice_index.." filename="..filename)
-  local buffer = softcut_load_file_mono(filename, buffer_index)
+  print("softcut_setup_stereo() buffers 1 & 2"..
+    " voice_index_l="..voice_index_l.." voice_index_r="..voice_index_r..
+    " filename="..filename)
+  local buffer = softcut_load_file_stereo(filename)
 
-  softcut_reset_voice(voice_index, buffer_index, buffer.length)
+  softcut_setup_voices_stereo(voice_index_l, voice_index_r, buffer.length)
 end
 
 
-local buffer1
-local buffer2
+-- Simple setup of looping a single mono channel using buffer1 and the voice specified  
+function softcut_setup_mono(filename, buffer_index, voice_index) 
+  --FIXME filename = _path.dust.."code/softcut-studies/lib/whirl1.aif"
+  print("softcut_setup_mono() buffer_index="..buffer_index.." voice_index="..voice_index..
+    " filename="..filename)
+  local buffer = softcut_load_file_mono(filename, buffer_index)
+
+  softcut_setup_voice_mono(voice_index, buffer_index, buffer.length)
+end
+
+
+local buffer_mono_1
+local buffer_mono_2
+local buffer_stereo
+
+
+-- Loads both channels of wav file into two buffers so that can playe stereo
+function softcut_load_file_stereo(filename)
+  print("Loading into stereo buffers wav file="..filename)
+  
+  softcut.buffer_read_stereo(
+    filename,
+    0,  -- start at beginning of file
+    0,  -- load into beginning of buffer 
+    -1) -- duration. -1 means read as much as possible
+
+  buffer_stereo = {filename=filename, length=wav_file_length(filename) }
+
+  return buffer_stereo
+end
+
+
+-- Sets up two voices for a stereo channel
+function softcut_setup_voices_stereo(voice_index_l, voice_index_r, length) 
+  print("softcut_setup_voices_stereo() Setting up voices" ..
+    " voice_index_l=".. voice_index_l .. 
+    " voice_index_r=".. voice_index_r .. 
+    " length="..length)
+
+  -- Setup left channel
+  buffer_index_l = 1
+  softcut_setup_voice_mono(voice_index_l, 1, length)
+  softcut.pan(voice_index_l, -1)
+  
+  -- Setup right channel
+  buffer_index_r = 2
+  softcut_setup_voice_mono(voice_index_r, 2, length)
+  softcut.pan(voice_index_l, 1)
+end
 
 
 -- Loads left channel of wav file into a buffer.
-function softcut_load_file_mono(filename, buffer_index)
-  print("Loading into buffer ".. buffer_index .. " wav file="..filename)
+local function softcut_load_file_mono(filename, buffer_index)
+  print("Loading into mono buffer ".. buffer_index .. " wav file="..filename)
   
-  softcut.buffer_read_mono(filename,
+  softcut.buffer_read_mono(
+    filename,
     0,  -- start at beginning of file
     0,  -- load into beginning of buffer 
     -1, -- duration. -1 means read as much as possible
     1,  -- Load just channel 1. If want stereo then use buffer_read_stereo(), but uses both buffers
-    buffer_index)
+    buffer_index) -- Destination
   
   local buffer = {index=buffer_index, filename=filename, length=wav_file_length(filename) }
 
   -- Set the globals so all info will be maintained
   if buffer_index == 1 then
-    buffer1 = buffer
+    buffer_mono_1 = buffer
   else
-    buffer2 = buffer
+    buffer_mono_2 = buffer
   end
 
   return buffer
 end
 
 
--- Resets a voice to default values where will loop through an audio buffer
-function softcut_reset_voice(voice_index, buffer_index, length)
-  print("softcut_reset_voice() Resetting voice ".. voice_index .. 
+-- Resets a mono voice to default values where will loop through an audio buffer
+function softcut_setup_voice_mono(voice_index, buffer_index, length)
+  print("softcut_setup_voice_mono() Setting up voice ".. voice_index .. 
     " and buffer_index "..buffer_index.." and length="..length)
 
   -- Enable voice by setting it to 1
