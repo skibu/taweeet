@@ -5,7 +5,7 @@ local json = include "lib/json"
 
 -- Hostname of the webserver. At first just using behind the router IP address of 
 -- macbook where running the webserver
-local hostname = "http://192.168.0.85"
+local hostname = "http://192.168.4.27"
 local port = "8080"
 
 
