@@ -11,7 +11,7 @@ include "lib/softcutUtil"
 include "lib/parameters"
 
 
-debug = false
+debug_mode = false
 current_count = 0 -- incremented every clock tick
 
 -- So can play a simple sound
@@ -95,13 +95,13 @@ end
 -- Called everytime the metro clock ticks
 function tick(count)
   current_count = count
-  if debug then print("current_count="..current_count) end
+  if debug_mode then print("current_count="..current_count) end
   redraw()
 end
 
 
 function redraw()
-  if debug then print("in redraw()") end
+  if debug_mode then print("in redraw()") end
   
   -- Always start by clearing screen
   screen.clear()
@@ -112,7 +112,7 @@ function redraw()
   local png_x = -global_png_width + 6*current_count
   if png_x > (128-global_png_width)/2 then 
     -- Reached desired horizontal position so don't increase png_x anymore
-    if debug then print("png centered!") end
+    if debug_mode then print("png centered!") end
     png_x = (128-global_png_width)/2
   end
   screen.display_png(global_png_filename, png_x, png_y)
@@ -156,7 +156,7 @@ function redraw()
   -- update so that drawing actually visible
   screen.update()
   
-  if debug then print("Done with redraw()") end
+  if debug_mode then print("Done with redraw()") end
   
   if rectangle_y > 64 then
     intro_counter:stop()
@@ -166,6 +166,14 @@ end
   
 
 function key(n, down)
+  if n == 1 and down == 0 then
+    -- Key1 up so jump to edit params directly. Don't require it
+    -- to be a short press so that it is easier. And use key up
+    -- event if used key down then the subsequent key1 up would 
+    -- switch back from edit params menu to the application screen.
+    jump_to_edit_params_screen()
+  end
+  
   if n == 3 and down == 1 then
     print("button 3 down")
   end
