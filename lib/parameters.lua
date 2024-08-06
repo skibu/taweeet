@@ -26,25 +26,25 @@ function parameters_init()
 end
 
 
+-- Jumps from the application screen to the script's Params Edit screen so that user can 
+-- easily change app params. For when k1 pressed from within the application. Really nice
+-- feature since it makes param changes easier.
 function jump_to_edit_params_screen()
-  print("In jump_to_edit_params_screen()...")
-  print(debug.traceback())
-  
   -- Change to menu mode 
   _menu.set_mode(true) 
-  
-  -- Initialize the params page
+
+  -- Get access to the PARAMS menu class
   params_class = require "core/menu/params"
-  params_class.init()
+
+  -- Go to EDIT screen of the PARAMS menu. Needed in case user was at another PARAMS screen, like PSET
+  params_class.mode = 1 -- mEDIT screen
+    
+  -- Set to first settable item, which will be Group:
+  params_class.pos = 1
   
   -- Change to PARAMS menu screen
   _menu.set_page("PARAMS")
-  
-  -- Go to the Edit Params page by acting like key3 was pressed to 
-  -- simulate selecting Edit> from the PARAMS menu.
-  -- Wanted to necessary functions directly but they were local to
-  -- the params.lua core norns software and therefore not really accessible.
-  params_class.key(3, 1)
-  
-  print("Should now be in Taweet Parameters page")
+
+  -- Initialize the params page
+  params_class.init()
 end

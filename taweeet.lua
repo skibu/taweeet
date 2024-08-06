@@ -120,7 +120,7 @@ function redraw()
   -- Draw some vertically moving name of the species.
   -- First draw a darker rectangle so text will be readable. And to
   -- do that first need to figure out proper font size for the species name.
-  screen.font_face(4)
+  screen.font_face(3)
   local font_size = 15 -- Will actually start with font 14
   local horiz_padding = 4
   repeat  
@@ -149,7 +149,7 @@ function redraw()
   
   -- Draw species name on screen over the rectangle
   screen.level(15)
-  screen.aa(1)
+  screen.aa(0)
   screen.move(rectangle_x + horiz_padding, rectangle_y - 2 + font_size)
   screen.text(global_species_name)
   
@@ -171,6 +171,7 @@ function key(n, down)
     -- to be a short press so that it is easier. And use key up
     -- event if used key down then the subsequent key1 up would 
     -- switch back from edit params menu to the application screen.
+    print("FIXME in app and key1 is up event")
     jump_to_edit_params_screen()
   end
   
