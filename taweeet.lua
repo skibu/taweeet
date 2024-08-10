@@ -73,7 +73,7 @@ end
 
 
 function init()
-  print("initing...")
+  print("Initing Taweeet...")
   
   -- Startup softcut
   softcut_init()
@@ -171,7 +171,6 @@ function key(n, down)
     -- to be a short press so that it is easier. And use key up
     -- event if used key down then the subsequent key1 up would 
     -- switch back from edit params menu to the application screen.
-    print("FIXME in app and key1 is up event")
     jump_to_edit_params_screen()
   end
   
