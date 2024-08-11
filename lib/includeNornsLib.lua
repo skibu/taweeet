@@ -14,7 +14,7 @@ function include_norns_lib(name)
     -- to get missing files and a "pull" to get modifications.
     -- NOTE: user made changes to the lib will be lost!
     local checkout_command = "git -C ".._path.code..github_repo.." checkout ."
-    local pull_command = "git -C ".._path.code..github_repo.." pull"
+    local pull_command = "git -C ".._path.code..github_repo.." pull --ff-only"
     print("Updating NornsLib using command:\n"..checkout_command.."\nand\n"..pull_command)
     os.execute(checkout_command)
     os.execute(pull_command)
