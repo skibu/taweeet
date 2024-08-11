@@ -20,6 +20,3 @@ function include_norns_lib(name)
     return include(include_file)
   end 
 end
-
--- Then can include lib files vie something like:
---include_norns_lib("screenExtensions")

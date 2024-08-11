@@ -4,6 +4,11 @@
 --
 -- Click on K3 to start
 
+-- Include nornsLib
+include "lib/includeNornsLib"
+include_norns_lib("parameterExtensions")
+
+-- All other includes
 include "lib/get"
 include "lib/util"
 include "lib/cache"
@@ -35,8 +40,8 @@ end
 local function initRandomSpecies()
   print("Determining a random species to use...")
   
-  -- Get list of species
-  local species_list = getSpeciesList()
+  -- Get list of all species
+  local species_list = getAllSpeciesList()
 
   -- Pick a species name by random
   local idx = math.random(1, #species_list)
@@ -52,7 +57,7 @@ local function initRandomSpecies()
   local image_data_tbl = image_data_list[image_idx]
   local png_url = image_data_tbl.image_url
   local png_filename = getPng(png_url, random_species_name)
-  local png_width, png_height = extents(screen.load_png(png_filename))
+  local png_width, png_height = screen.extents(screen.load_png(png_filename))
     
   -- Pick random wav file url for the species
   --get url from species_data

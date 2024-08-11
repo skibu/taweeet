@@ -131,40 +131,60 @@ function getSpeciesData(species_name)
 end
 
   
-local _species_list_cache = nil
+local _all_species_list_cache = nil
 
 -- Does a query to the webserver and returns table containing array of all species names.
 -- Caches the value in both memory for super quick access, and on the file system so that
 -- works fast across application restarts.
-function getSpeciesList()
+function getAllSpeciesList()
   -- Use table from memory cache if it is there
-  if _species_list_cache ~= nil then
-    return _species_list_cache
+  if _all_species_list_cache ~= nil then
+    return _all_species_list_cache
   end
   
   -- Determine file name for the cache file
-  local cache_filename = getAppDirectory() .. "/speciesList.json"
+  local cache_filename = getAppDirectory() .. "/allSpeciesList.json"
 
   -- If already have it in cache then return it
   readFromFile(cache_filename)
   local species_list = readFromFile(cache_filename)
   if species_list ~= nil then 
     -- Store in memory cache
-    _species_list_cache = species_list
+    _all_species_list_cache = species_list
     
     return species_list
   end
   
   -- Get the table
-  local species_list = getLuaTableFromImager("/speciesList")
+  local species_list = getLuaTableFromImager("/allSpeciesList")
 
   -- Store table into file system cache
   writeToFile(species_list, cache_filename)
   
   -- Store in memory cache
-  _species_list_cache = species_list
+  _all_species_list_cache = species_list
   
   return species_list
+end
+
+
+local _species_for_group_cache = {}
+
+-- Does query to webserver to get list of species for the specified group name
+function getSpeciesForGroup(group)
+  -- Use table from memory cache if it is there
+  local cached_species_for_group = _species_for_group_cache[group]
+  if cached_species_for_group ~= nil then
+    return cached_species_for_group
+  end
+  
+    -- Get the table
+  local species_for_group_list = getLuaTableFromImager("/speciesForGroup?g="..urlencode(group))
+
+  -- Store in memory cache
+  _species_for_group_cache[group] = species_for_group_list
+  
+  return species_for_group_list
 end
 
 
