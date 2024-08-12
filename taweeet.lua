@@ -34,10 +34,44 @@ local function set_species_globals(species_name, png_filename, png_width, png_he
 end
 
 
+function select_species(species_name)
+  print("Initing select_species(species_name) species="..species_name)
+  
+  -- Load in config for the species
+  species_data = getSpeciesData(species_name)
+
+  -- Pick random png url for the species
+  local image_data_list = species_data.imageDataList
+  local image_idx = math.random(1, #image_data_list)
+  local image_data_tbl = image_data_list[image_idx]
+  local png_url = image_data_tbl.image_url
+  local png_filename = getPng(png_url, species_name)
+  local png_width, png_height = screen.extents(screen.load_png(png_filename))
+    
+  -- Pick random wav file url for the species
+  --get url from species_data
+  local audio_data_list = species_data.audioDataList
+  local audio_idx = math.random(1, #audio_data_list)
+  local audio_data = audio_data_list[audio_idx]
+  local wav_url = audio_data.audio_url
+  wav_filename = getWav(wav_url, species_name)
+
+  -- Keep track of the info needed to display the species image and name on the screen
+  set_species_globals(species_name, png_filename, png_width, png_height)
+  
+  -- Play the wav file
+  softcut_setup_stereo(wav_filename, 1, 2) 
+  
+  -- Start up the animation timer that scrolls the image
+  intro_counter = metro.init(tick, 0.05, -1)
+  intro_counter:start()
+end
+
+
 -- Gets list of species and picks one randomely. Then loads in all the info
 -- for the species. Returns table containing all of the data associated with the
 -- selected species.
-local function initRandomSpecies()
+local function init_random_species()
   print("Determining a random species to use...")
   
   -- Get list of all species
@@ -48,32 +82,7 @@ local function initRandomSpecies()
   local random_species_name = species_list[idx]
   print("Using species "..random_species_name)
   
-  -- Load in config for the species
-  species_data = getSpeciesData(random_species_name)
-
-  -- Pick random png url for the species
-  local image_data_list = species_data.imageDataList
-  local image_idx = math.random(1, #image_data_list)
-  local image_data_tbl = image_data_list[image_idx]
-  local png_url = image_data_tbl.image_url
-  local png_filename = getPng(png_url, random_species_name)
-  local png_width, png_height = screen.extents(screen.load_png(png_filename))
-    
-  -- Pick random wav file url for the species
-  --get url from species_data
-  local audio_data_list = species_data.audioDataList
-  local audio_idx = math.random(1, #audio_data_list)
-  local audio_data = audio_data_list[audio_idx]
-  local wav_url = audio_data.audio_url
-  wav_filename = getWav(wav_url, random_species_name)
-
-  -- Keep track of the info needed to display the species image and name on the screen
-  set_species_globals(random_species_name, png_filename, png_width, png_height)
-  
-  print("Finished initing for species="..random_species_name)
-  
-  -- Play the wav file
-  softcut_setup_stereo(wav_filename, 1, 2) 
+  select_species(random_species_name)
 end
 
 
@@ -89,18 +98,14 @@ function init()
   -- FIXME engine.hz(300)
   
   --Load in a species
-  initRandomSpecies()
-      
-  -- Start up the timer
-  intro_counter = metro.init(tick, 0.05, -1)
-  intro_counter:start()
+  init_random_species()
 end
 
 
 -- Called everytime the metro clock ticks
 function tick(count)
   current_count = count
-  if debug_mode then print("current_count="..current_count) end
+  print("current_count="..current_count)
   redraw()
 end
 
