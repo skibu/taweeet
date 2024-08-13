@@ -57,15 +57,42 @@ local function encode_nil(val)
 end
 
 
-local function encode_table(val, stack)
+-- Super kludgey way to get blanks quickly. Default is indentation of 2 spaces
+local blanks = 
+  "                                                                                           "
+local function spaces(levels, indent_per_level)
+  if levels == 0 then 
+    return ""
+  else
+    return string.sub(blanks, 1, levels * indent_per_level)
+  end
+end
+
+
+-- Really silly, but need custom function to determine size of associative array
+-- since Lua doesn't provide one.
+function associativeArrayLength(tbl)
+  local count = 0
+  for _ in pairs(tbl) do count = count + 1 end
+  return count
+end
+
+
+local function encode_table(val, stack, indent)
   local res = {}
   stack = stack or {}
+    
+  -- Default indent is 2 spaces
+  local indent = indent or 2
 
   -- Circular reference?
   if stack[val] then error("circular reference") end
 
-  stack[val] = true
+  -- For indentation
+  local depth = associativeArrayLength(stack)
 
+  stack[val] = true
+  
   if rawget(val, 1) ~= nil or next(val) == nil then
     -- Treat as array -- check keys are valid and it is not sparse
     local n = 0
@@ -80,21 +107,23 @@ local function encode_table(val, stack)
     end
     -- Encode
     for i, v in ipairs(val) do
-      table.insert(res, encode(v, stack))
+      table.insert(res, spaces(depth+1, indent)..encode(v, stack, indent))
     end
     stack[val] = nil
-    return "[\n" .. table.concat(res, ",\n") .. "\n]"
+    return "[\n" .. table.concat(res, ",\n") .. "\n"..spaces(depth, indent).."]"
 
   else
-    -- Treat as an object
+    -- Treat value as a table object
     for k, v in pairs(val) do
       if type(k) ~= "string" then
         error("invalid table: mixed or invalid key types")
       end
-      table.insert(res, encode(k, stack) .. ":" .. encode(v, stack))
+      local colon = indent > 0 and " : " or ":"
+      table.insert(res, spaces(depth+1, indent)..encode(k, stack, indent) .. 
+        colon .. encode(v, stack, indent))
     end
     stack[val] = nil
-    return "{\n" .. table.concat(res, ",\n") .. "\n}"
+    return "{\n" .. table.concat(res, ",\n") .. "\n"..spaces(depth, indent).."}"
   end
 end
 
@@ -106,10 +135,17 @@ end
 
 local function encode_number(val)
   -- Check for NaN, -inf and inf
-  if val ~= val or val <= -math.huge or val >= math.huge then
-    error("unexpected number value '" .. tostring(val) .. "'")
-  end
+  if val <= -math.huge then return "-Infinity" end
+  if val >= math.huge then return "Infinity" end
+  if val ~= val then return "NaN" end
+
+  -- Deal with regular numbers  
   return string.format("%.14g", val)
+end
+
+
+local function encode_function(val)
+  return '"'..tostring(val)..'"'
 end
 
 
@@ -118,22 +154,24 @@ local type_func_map = {
   [ "table"   ] = encode_table,
   [ "string"  ] = encode_string,
   [ "number"  ] = encode_number,
+  [ "function"] = encode_function,
   [ "boolean" ] = tostring,
 }
 
 
-encode = function(val, stack)
+encode = function(val, stack, indent)
   local t = type(val)
   local f = type_func_map[t]
   if f then
-    return f(val, stack)
+    return f(val, stack, indent)
+  else
+    error("unexpected type '" .. t .. "'")
   end
-  error("unexpected type '" .. t .. "'")
 end
 
 
-function json.encode(val)
-  return ( encode(val) )
+function json.encode(val, indent)
+  return ( encode(val, {}, indent) )
 end
 
 
@@ -157,9 +195,12 @@ local escape_chars  = create_set("\\", "/", '"', "b", "f", "n", "r", "t", "u")
 local literals      = create_set("true", "false", "null")
 
 local literal_map = {
-  [ "true"  ] = true,
-  [ "false" ] = false,
-  [ "null"  ] = nil,
+  [ "true"  ]     = true,
+  [ "false" ]     = false,
+  [ "null"  ]     = nil,
+  [ "+Infinity" ] = math.huge,
+  [ "-Infinity" ] = -math.huge,
+  [ "NaN" ]       = nil
 }
 
 
