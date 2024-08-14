@@ -5,8 +5,22 @@
 -- Click on K3 to start
 
 -- Include nornsLib
-include "lib/includeNornsLib"
-include_norns_lib("parameterExtensions")
+-- The function
+function download_nornsLib()
+  if not util.file_exists(_path.code.."nornsLib") then
+    os.execute("git clone https://github.com/skibu/nornsLib.git ".._path.code.."nornsLib")
+  end
+end
+
+-- Download the nornsLib if haven't already done so
+download_nornsLib()
+
+-- Optionally, make sure nornsLib has the latest greatest version from GitHub
+include("nornsLib/updateLib")
+update_nornsLib()
+
+-- Include whichever extension scripts are needed, or simply all of them 
+include("nornsLib/includeAllExt")
 
 -- All other includes
 include "lib/get"

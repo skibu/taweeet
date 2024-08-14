@@ -8,7 +8,7 @@ local group_timer = nil
 
 -- When Group is the selected option this is called for every change of the encoder
 local function group_changed(index)
-  tprint("group_changed()")
+  util.tprint("group_changed()")
   -- Reset timer so that group_timer_expired() will be called only after 
   -- encoder3 stops being turned. This avoids handling too many updates.
   -- And don't select species through selector callbacks at startup
@@ -36,7 +36,7 @@ local species_timer = nil
 
 -- When Species is the selected option this is called for every change of the encoder
 local function species_changed(index)
-  tprint("species_changed()")
+  util.tprint("species_changed()")
   -- Reset timer so that species_timer_expired() will be called only after 
   -- encoder3 stops being turned. This avoids handling too many updates.
   -- And don't select species through a selector at startup
@@ -46,7 +46,7 @@ end
 -- Called when user stop changing the species selector
 local function species_timer_expired()
   -- New species selected. But this will also be called at 
-  tprint("Species selected is: "..params:string("species"))
+  util.tprint("Species selected is: "..params:string("species"))
   select_species(params:string("species"))
 end
 
@@ -86,6 +86,6 @@ function parameters_init()
   
   -- Done with initializing so making the group and species selectors active
   initializing = false
-  tprint("Done with params_init()")
+  util.tprint("Done with params_init()")
 end
 

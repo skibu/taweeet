@@ -1,10 +1,8 @@
-local json = include "lib/json"
-
 
 -- Writes table object to a file in json format
 function writeToFile(tbl, filename)
   -- When creating the file need to first make sure the associated directory is created
-  createDir(filename)
+  util.make_dir_for_file(filename)
 
   -- Data to be written
   local json_str = json.encode(tbl)

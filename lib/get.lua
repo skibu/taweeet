@@ -1,6 +1,5 @@
 include "lib/cache"
 include "lib/util"
-local json = include "lib/json"
 
 
 -- Hostname of the webserver. At first just using behind the router IP address of 
@@ -16,7 +15,7 @@ function getPng(url, species_name)
   
   -- If file doesn't yet exist then get it and store it
   if not util.file_exists(full_filename) then
-    tprint("Creating png file " .. full_filename)
+    util.tprint("Creating png file " .. full_filename)
     
     -- Create curl command that gets and stores the wav file. Note that
     -- using "&" to execute command in background so that this function
@@ -26,10 +25,10 @@ function getPng(url, species_name)
       "--create-dirs --output " .. filename .. 
       " --output-dir " .. dir .. 
       " \"" .. hostname .. ":" .. port .. "/pngFile?url=" .. url ..
-      "&s=".. urlencode(species_name) .. "\"" 
+      "&s=".. util.urlencode(species_name) .. "\"" 
       
     util.os_capture(cmd)
-    tprint("getPng() executed command=" .. cmd)
+    util.tprint("getPng() executed command=" .. cmd)
   end
   
   return full_filename
@@ -46,7 +45,7 @@ function getWav(url, species_name)
 
   -- If file doesn't yet exist then get it and store it
   if not util.file_exists(full_filename) then
-    tprint("Creating wav file " .. full_filename)
+    util.tprint("Creating wav file " .. full_filename)
     
     -- Create curl command that gets and stores the wav file. Note that
     -- using "&" to execute command in background so that this function
@@ -59,10 +58,10 @@ function getWav(url, species_name)
       "--create-dirs --output " .. filename .. 
       " --output-dir " .. dir .. 
       " \"" .. hostname .. ":" .. port .. "/wavFile?url=" .. url ..
-      "&s=".. urlencode(species_name) .. "\" " 
+      "&s=".. util.urlencode(species_name) .. "\" " 
       
     util.os_capture(cmd)
-    tprint("getWavFile() executed command=" .. cmd)
+    util.tprint("getWavFile() executed command=" .. cmd)
   end
 
   return full_filename
@@ -125,7 +124,9 @@ end
 -- Gets the data associated with the specified species. Includes list urls for 
 -- both images and audio.  
 function getSpeciesData(species_name)
-  local species_data = getLuaTableFromImager("/dataForSpecies?s="..urlencode(species_name))
+  local species_data = getLuaTableFromImager("/dataForSpecies?s="..
+      util.urlencode(species_name))
+
   -- Turn the json into a Lua table
   return species_data
 end
@@ -178,8 +179,9 @@ function getSpeciesForGroup(group)
     return cached_species_for_group
   end
   
-    -- Get the table
-  local species_for_group_list = getLuaTableFromImager("/speciesForGroup?g="..urlencode(group))
+  -- Get the table
+  local species_for_group_list = getLuaTableFromImager("/speciesForGroup?g="..
+      util.urlencode(group))
 
   -- Store in memory cache
   _species_for_group_cache[group] = species_for_group_list

@@ -6,7 +6,7 @@ end
 
 -- Simple setup of looping two stereo channels using buffers 1 & 2 and voice1   
 function softcut_setup_stereo(filename, voice_index_l, voice_index_r) 
-  tprint("softcut_setup_stereo() buffers 1 & 2"..
+  util.tprint("softcut_setup_stereo() buffers 1 & 2"..
     " voice_index_l="..voice_index_l.." voice_index_r="..voice_index_r..
     " filename="..filename)
   local buffer = softcut_load_file_stereo(filename)
@@ -17,7 +17,7 @@ end
 
 -- Simple setup of looping a single mono channel using buffer1 and the voice specified  
 function softcut_setup_mono(filename, buffer_index, voice_index) 
-  tprint("softcut_setup_mono() buffer_index="..buffer_index.." voice_index="..voice_index..
+  util.tprint("softcut_setup_mono() buffer_index="..buffer_index.." voice_index="..voice_index..
     " filename="..filename)
   local buffer = softcut_load_file_mono(filename, buffer_index)
 
@@ -32,7 +32,7 @@ local buffer_stereo
 
 -- Loads both channels of wav file into two buffers so that can playe stereo
 function softcut_load_file_stereo(filename)
-  tprint("Loading into stereo buffers wav file="..filename)
+  util.tprint("Loading into stereo buffers wav file="..filename)
   
   softcut.buffer_read_stereo(
     filename,
@@ -48,7 +48,7 @@ end
 
 -- Sets up two voices for a stereo channel
 function softcut_setup_voices_stereo(voice_index_l, voice_index_r, length) 
-  tprint("softcut_setup_voices_stereo() Setting up voices" ..
+  util.tprint("softcut_setup_voices_stereo() Setting up voices" ..
     " voice_index_l=".. voice_index_l .. 
     " voice_index_r=".. voice_index_r .. 
     " length="..length)
@@ -67,7 +67,7 @@ end
 
 -- Loads left channel of wav file into a buffer.
 local function softcut_load_file_mono(filename, buffer_index)
-  tprint("Loading into mono buffer ".. buffer_index .. " wav file="..filename)
+  util.tprint("Loading into mono buffer ".. buffer_index .. " wav file="..filename)
   
   softcut.buffer_read_mono(
     filename,
@@ -92,7 +92,7 @@ end
 
 -- Resets a mono voice to default values where will loop through an audio buffer
 function softcut_setup_voice_mono(voice_index, buffer_index, length)
-  tprint("softcut_setup_voice_mono() Setting up voice ".. voice_index .. 
+  util.tprint("softcut_setup_voice_mono() Setting up voice ".. voice_index .. 
     " and buffer_index "..buffer_index.." and length="..length)
 
   -- Enable voice by setting it to 1
