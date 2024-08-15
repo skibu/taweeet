@@ -147,8 +147,7 @@ function getAllSpeciesList()
   local cache_filename = getAppDirectory() .. "/allSpeciesList.json"
 
   -- If already have it in cache then return it
-  readFromFile(cache_filename)
-  local species_list = readFromFile(cache_filename)
+  local species_list = json.read(cache_filename)
   if species_list ~= nil then 
     -- Store in memory cache
     _all_species_list_cache = species_list
@@ -160,7 +159,7 @@ function getAllSpeciesList()
   local species_list = getLuaTableFromImager("/allSpeciesList")
 
   -- Store table into file system cache
-  writeToFile(species_list, cache_filename)
+  json.write(species_list, cache_filename)
   
   -- Store in memory cache
   _all_species_list_cache = species_list
@@ -205,8 +204,7 @@ function getGroupsList()
   local cache_filename = getAppDirectory() .. "/groupsList.json"
 
   -- If already have it in cache then return it
-  readFromFile(cache_filename)
-  local groups_list = readFromFile(cache_filename)
+  local groups_list = json.read(cache_filename)
   if groups_list ~= nil then 
     -- Store in memory cache
     _groups_list_cache = groups_list
@@ -218,7 +216,7 @@ function getGroupsList()
   local groups_list = getLuaTableFromImager("/groupsList")
 
   -- Store table into file system cache
-  writeToFile(groups_list, cache_filename)
+  json.write(groups_list, cache_filename)
   
   -- Store in memory cache
   _groups_list_cache = groups_list
