@@ -102,33 +102,17 @@ function getPngBuffer(species)
 end
 
 
--- Gets JSON from a URL and returns it as a Lua table
-local function getLuaTable(url)
-  local cmd = "curl --silent --max-time 10 --insecure \""  .. url .. "\""
-  local json_str = util.os_capture(cmd)
-
-  -- Turn the json into a Lua table
-  lua_table = json.decode(json_str)
-  return lua_table
-end
-
-
 -- Executes specified command for the Imager server and returns Lua
 -- table made up of the returned JSON.
 local function getLuaTableFromImager(command)
-  lua_table = getLuaTable(hostname .. ":" .. port .. command)
-  return lua_table
+  return json.get(hostname .. ":" .. port .. command)
 end
 
   
 -- Gets the data associated with the specified species. Includes list urls for 
 -- both images and audio.  
 function getSpeciesData(species_name)
-  local species_data = getLuaTableFromImager("/dataForSpecies?s="..
-      util.urlencode(species_name))
-
-  -- Turn the json into a Lua table
-  return species_data
+  return getLuaTableFromImager("/dataForSpecies?s="..util.urlencode(species_name))
 end
 
   
