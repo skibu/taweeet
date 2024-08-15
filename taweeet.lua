@@ -19,7 +19,7 @@ debug_mode = false
 current_count = 0 -- incremented every clock tick
 
 -- So can play a simple sound
--- FIXME engine.name = "TestSine"
+engine.name = "TestSine"
 
 
 local global_species_name, global_png_filename, global_png_width, global_png_height = nil, nil, nil, nil
@@ -94,7 +94,7 @@ function init()
   parameters_init()
 
   -- Initialize sound engine
-  -- FIXME engine.hz(300)
+  engine.hz(300)
   
   --Load in a species
   init_random_species()
@@ -104,7 +104,6 @@ end
 -- Called everytime the metro clock ticks
 function tick(count)
   current_count = count
-  print("current_count="..current_count)
   redraw()
 end
 
@@ -188,7 +187,7 @@ function key(n, down)
   end
   
   if n == 2 then
-    -- FIXME engine.hz(100 + 100*down)
+    engine.hz(100 + 100*down)
   end
 end
 
