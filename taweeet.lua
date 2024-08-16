@@ -22,48 +22,97 @@ current_count = 0 -- incremented every clock tick
 engine.name = "TestSine"
 
 
-local global_species_name, global_png_filename, global_png_width, global_png_height = nil, nil, nil, nil
+global_species_data = nil
 
--- Set the globals for the species at once
-local function set_species_globals(species_name, png_filename, png_width, png_height)
-  global_species_name = species_name
-  global_png_filename = png_filename
-  global_png_width = png_width
-  global_png_height = png_height
+-- Called everytime the metro clock ticks. Waits for png file to exist. Once
+-- it does the intro is started, which scrolls the image across the screen.
+function wait_for_png_file(count)
+  if debug_mode then util.tprint("in wait_for_png_file()") end
+
+  if util.file_exists(global_species_data.png_filename) then
+    util.tprint("PNG file loaded so using it. "..global_species_data.png_filename)
+      
+    -- png file exists so create the image buffer and determine width and height
+    global_species_data.image_buffer = screen.load_png(global_species_data.png_filename)
+    global_species_data.width, global_species_data.height = 
+        screen.extents(global_species_data.image_buffer)
+    
+    -- Done waiting
+    png_file_timer:stop()
+    
+    -- Start the intro animation
+    intro_counter:start()
+  else
+    if debug_mode then util.tprint("Waiting for png file "..global_species_data.png_filename) end
+  end
 end
+
+
+-- Called every 0.2 sec bu wav_file_timer. Once wav file exists
+-- it is played
+local function wait_for_wav_file()
+  if util.file_exists(global_species_data.wav_filename) then
+    util.tprint("WAV file loaded so playing it. ".. global_species_data.wav_filename)
+    
+    -- Done waiting
+    wav_file_timer:stop()
+    
+    -- Play the wav file
+    softcut_setup_stereo(global_species_data.wav_filename, 1, 2)
+  else
+    if debug_mode then util.tprint("Waiting for wav file "..global_species_data.wav_filename) end
+  end
+end
+
+
+-- Animates the intro by updating the global current_count while calling redraw() 
+-- repeatedly
+function intro_tick(count)
+  current_count = count
+  redraw(true)
+end
+
+
+-- Note: the metro timers are globals so that they can be reused. But
+-- this means that the event functions need to already be declared at
+-- this point. Otherwise would just be passing in nil function.
+
+-- Timer for waiting until png file is ready. Only wait up to 10 seconds.
+png_file_timer = metro.init(wait_for_png_file, 0.2, 50)
+
+-- Timer for waiting until wav file is ready. Only wait up to 20 seconds.
+wav_file_timer = metro.init(wait_for_wav_file, 0.4, 50)
+
+-- Timer for doing intro animation
+intro_counter = metro.init(intro_tick, 0.05, -1)
 
 
 function select_species(species_name)
   print("Initing select_species(species_name) species="..species_name)
   
   -- Load in config for the species
-  species_data = getSpeciesData(species_name)
-
+  global_species_data = getSpeciesData(species_name)
+  global_species_data.species_name = species_name
+  
   -- Pick random png url for the species
-  local image_data_list = species_data.imageDataList
+  local image_data_list = global_species_data.imageDataList
   local image_idx = math.random(1, #image_data_list)
   local image_data_tbl = image_data_list[image_idx]
   local png_url = image_data_tbl.image_url
-  local png_filename = getPng(png_url, species_name)
-  local png_width, png_height = screen.extents(screen.load_png(png_filename))
+  global_species_data.png_filename = getPng(png_url, species_name)
     
+  -- Waits for png file to be loaded and then initiates the intro
+  png_file_timer:start()
+
   -- Pick random wav file url for the species
-  --get url from species_data
-  local audio_data_list = species_data.audioDataList
+  local audio_data_list = global_species_data.audioDataList
   local audio_idx = math.random(1, #audio_data_list)
   local audio_data = audio_data_list[audio_idx]
   local wav_url = audio_data.audio_url
-  wav_filename = getWav(wav_url, species_name)
-
-  -- Keep track of the info needed to display the species image and name on the screen
-  set_species_globals(species_name, png_filename, png_width, png_height)
+  global_species_data.wav_filename = getWav(wav_url, species_name)
   
-  -- Play the wav file
-  softcut_setup_stereo(wav_filename, 1, 2) 
-  
-  -- Start up the animation timer that scrolls the image
-  intro_counter = metro.init(tick, 0.05, -1)
-  intro_counter:start()
+  -- Start timer for playing wav file once it is ready
+  wav_file_timer:start()
 end
 
 
@@ -94,37 +143,38 @@ function init()
   parameters_init()
 
   -- Initialize sound engine
-  engine.hz(300)
+  engine.hz(40)
   
   --Load in a species
   init_random_species()
 end
 
 
--- Called everytime the metro clock ticks
-function tick(count)
-  current_count = count
-  redraw()
-end
-
-
-function redraw()
+function redraw(called_from_clock_tick)
+  -- If called be the system then the png and wav files might not
+  -- yet be ready. So only continue if called by intro_tick()
+  if not called_from_clock_tick then return end
+  
   if debug_mode then print("in redraw()") end
   
   -- Always start by clearing screen
   screen.clear()
   
   -- Draw moving image. Have it scroll left to right until it is in the middle of screen
-  --screen.display_png(global_png_filename, (128-global_png_width)/2, (64-global_png_height)/2)
-  local png_y = (64-global_png_height)/2
-  local png_x = -global_png_width + 6*current_count
-  if png_x > (128-global_png_width)/2 then 
+  png_width = global_species_data.width
+  png_height = global_species_data.height
+  
+  local png_y = (64-png_height)/2
+  local png_x = -png_width + 6*current_count
+  if png_x > (128-png_width)/2 then 
     -- Reached desired horizontal position so don't increase png_x anymore
     if debug_mode then print("png centered!") end
-    png_x = (128-global_png_width)/2
+    png_x = (128-png_width)/2
   end
-  screen.display_png(global_png_filename, png_x, png_y)
-
+  
+  -- Actually draw the image buffer
+  screen.display_image(global_species_data.image_buffer, png_x, png_y)
+  
   -- Draw some vertically moving name of the species.
   -- First draw a darker rectangle so text will be readable. And to
   -- do that first need to figure out proper font size for the species name.
@@ -134,7 +184,7 @@ function redraw()
   repeat  
     font_size = font_size - 1
     screen.font_size(font_size)
-    text_width = screen.text_extents(global_species_name)
+    text_width = screen.text_extents(global_species_data.species_name)
   until (text_width <= 128)
   
   -- rectangle_x is static and easy to determine
@@ -159,7 +209,7 @@ function redraw()
   screen.level(15)
   screen.aa(0)
   screen.move(rectangle_x + horiz_padding, rectangle_y - 2 + font_size)
-  screen.text(global_species_name)
+  screen.text(global_species_data.species_name)
   
   -- update so that drawing actually visible
   screen.update()

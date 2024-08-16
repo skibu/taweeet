@@ -20,14 +20,14 @@ function getPng(url, species_name)
     -- Create curl command that gets and stores the wav file. Note that
     -- using "&" to execute command in background so that this function
     -- returns quickly, wihtout waiting for file to be created, downloaded,
-    -- and saved.
+    -- and saved. Note: to return quickly must use os.execute() instead of 
+    -- something like util.execute_command() that waits for results.
     local cmd = "curl --compressed --silent --max-time 10 --insecure " .. 
       "--create-dirs --output " .. filename .. 
       " --output-dir " .. dir .. 
       " \"" .. hostname .. ":" .. port .. "/pngFile?url=" .. url ..
-      "&s=".. util.urlencode(species_name) .. "\"" 
-      
-    util.os_capture(cmd)
+      "&s=".. util.urlencode(species_name) .. "\" &" 
+    os.execute(cmd)
     util.tprint("getPng() executed command=" .. cmd)
   end
   
@@ -50,17 +50,15 @@ function getWav(url, species_name)
     -- Create curl command that gets and stores the wav file. Note that
     -- using "&" to execute command in background so that this function
     -- returns quickly, wihtout waiting for file to be created, downloaded,
-    -- and saved. 
-    -- Note: thought could speed up response by adding '&' to end of command 
-    -- so that it would run in backgroiund and therefore return immediately.
-    -- But timing showed that this did not speed things up at all.
+    -- and saved. Note: to return quickly must use os.execute() instead of 
+    -- something like util.execute_command() that waits for results.
     local cmd = "curl --compressed --silent --max-time 10 --insecure " .. 
       "--create-dirs --output " .. filename .. 
       " --output-dir " .. dir .. 
       " \"" .. hostname .. ":" .. port .. "/wavFile?url=" .. url ..
-      "&s=".. util.urlencode(species_name) .. "\" " 
+      "&s=".. util.urlencode(species_name) .. "\" &"
       
-    util.os_capture(cmd)
+    os.execute(cmd)
     util.tprint("getWavFile() executed command=" .. cmd)
   end
 
@@ -112,7 +110,10 @@ end
 -- Gets the data associated with the specified species. Includes list urls for 
 -- both images and audio.  
 function getSpeciesData(species_name)
-  return getLuaTableFromImager("/dataForSpecies?s="..util.urlencode(species_name))
+  util.tprint("Getting data for species "..species_name.."...")
+  species = getLuaTableFromImager("/dataForSpecies?s="..util.urlencode(species_name))
+  util.tprint("Done retrieving data for species")
+  return species
 end
 
   
