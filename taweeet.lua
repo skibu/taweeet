@@ -15,7 +15,7 @@ include "lib/softcutUtil"
 include "lib/parameters"
 
 
-debug_mode = false
+debug_mode = true
 current_count = 0 -- incremented every clock tick
 
 -- So can play a simple sound
@@ -24,46 +24,10 @@ engine.name = "TestSine"
 
 global_species_data = nil
 
--- Called everytime the metro clock ticks. Waits for png file to exist. Once
--- it does the intro is started, which scrolls the image across the screen.
-function wait_for_png_file(count)
-  if debug_mode then util.tprint("in wait_for_png_file()") end
 
-  if util.file_exists(global_species_data.png_filename) then
-    util.tprint("PNG file loaded so using it. "..global_species_data.png_filename)
-      
-    -- png file exists so create the image buffer and determine width and height
-    global_species_data.image_buffer = screen.load_png(global_species_data.png_filename)
-    global_species_data.width, global_species_data.height = 
-        screen.extents(global_species_data.image_buffer)
-    
-    -- Done waiting
-    png_file_timer:stop()
-    
-    -- Start the intro animation
-    intro_counter:start()
-  else
-    if debug_mode then util.tprint("Waiting for png file "..global_species_data.png_filename) end
-  end
-end
-
-
--- Called every 0.2 sec bu wav_file_timer. Once wav file exists
--- it is played
-local function wait_for_wav_file()
-  if util.file_exists(global_species_data.wav_filename) then
-    util.tprint("WAV file loaded so playing it. ".. global_species_data.wav_filename)
-    
-    -- Done waiting
-    wav_file_timer:stop()
-    
-    -- Play the wav file
-    softcut_setup_stereo(global_species_data.wav_filename, 1, 2)
-  else
-    if debug_mode then util.tprint("Waiting for wav file "..global_species_data.wav_filename) end
-  end
-end
-
+-- Note: the metro timers are globals so that they can be reused. But
+-- this means that the event functions need to already be declared at
+-- this point. Otherwise would just be passing in nil function.
 
 -- Animates the intro by updating the global current_count while calling redraw() 
 -- repeatedly
@@ -72,19 +36,27 @@ function intro_tick(count)
   redraw(true)
 end
 
-
--- Note: the metro timers are globals so that they can be reused. But
--- this means that the event functions need to already be declared at
--- this point. Otherwise would just be passing in nil function.
-
--- Timer for waiting until png file is ready. Only wait up to 10 seconds.
-png_file_timer = metro.init(wait_for_png_file, 0.2, 50)
-
--- Timer for waiting until wav file is ready. Only wait up to 20 seconds.
-wav_file_timer = metro.init(wait_for_wav_file, 0.4, 50)
-
 -- Timer for doing intro animation
 intro_counter = metro.init(intro_tick, 0.05, -1)
+
+
+-- Called when wav file is ready
+local function wav_file_exists_callback(filename)
+  -- Play the wav file
+  softcut_setup_stereo(filename, 1, 2)
+end
+
+
+-- Called when png file is ready
+local function png_file_exists_callback(filename)
+  -- png file exists so create the image buffer and determine width and height
+  global_species_data.image_buffer = screen.load_png(filename)
+  global_species_data.width, global_species_data.height = 
+    screen.extents(global_species_data.image_buffer)
+    
+  -- Start the intro animation
+  intro_counter:start()
+end
 
 
 function select_species(species_name)
@@ -100,9 +72,9 @@ function select_species(species_name)
   local image_data_tbl = image_data_list[image_idx]
   local png_url = image_data_tbl.image_url
   global_species_data.png_filename = getPng(png_url, species_name)
-    
-  -- Waits for png file to be loaded and then initiates the intro
-  png_file_timer:start()
+  
+  -- Start timer for displaying png file once it is ready
+  util.wait(global_species_data.png_filename, png_file_exists_callback, 0.2, 15)
 
   -- Pick random wav file url for the species
   local audio_data_list = global_species_data.audioDataList
@@ -112,7 +84,7 @@ function select_species(species_name)
   global_species_data.wav_filename = getWav(wav_url, species_name)
   
   -- Start timer for playing wav file once it is ready
-  wav_file_timer:start()
+  util.wait(global_species_data.wav_filename, wav_file_exists_callback, 0.4, 20)
 end
 
 
@@ -155,7 +127,7 @@ function redraw(called_from_clock_tick)
   -- yet be ready. So only continue if called by intro_tick()
   if not called_from_clock_tick then return end
   
-  if debug_mode then print("in redraw()") end
+  --if debug_mode then print("in redraw()") end
   
   -- Always start by clearing screen
   screen.clear()
@@ -168,7 +140,7 @@ function redraw(called_from_clock_tick)
   local png_x = -png_width + 6*current_count
   if png_x > (128-png_width)/2 then 
     -- Reached desired horizontal position so don't increase png_x anymore
-    if debug_mode then print("png centered!") end
+    --if debug_mode then print("png centered!") end
     png_x = (128-png_width)/2
   end
   
@@ -214,7 +186,7 @@ function redraw(called_from_clock_tick)
   -- update so that drawing actually visible
   screen.update()
   
-  if debug_mode then print("Done with redraw()") end
+  --if debug_mode then print("Done with redraw()") end
   
   if rectangle_y > 64 then
     intro_counter:stop()
