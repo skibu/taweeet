@@ -30,7 +30,7 @@ local buffer_mono_2
 local buffer_stereo
 
 
--- Loads both channels of wav file into two buffers so that can playe stereo
+-- Loads both channels of wav file into two buffers so that can play stereo
 function softcut_load_file_stereo(filename)
   util.tprint("Loading into stereo buffers wav file="..filename)
   
@@ -124,8 +124,9 @@ function softcut_setup_voice_mono(voice_index, buffer_index, length)
 end
 
 
--- Returns length of the wav file
+-- Returns length of the wav file in seconds
 function wav_file_length(filename)
+  -- Determine and return audio length
   local ch, samples, samplerate = audio.file_info(filename)
   return samples/samplerate
 end
