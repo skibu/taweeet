@@ -8,6 +8,7 @@
 include "lib/fullNornsLibInclude"
 
 -- All other includes
+include "lib/species"
 include "lib/get"
 include "lib/util"
 include "lib/cache"
@@ -19,10 +20,8 @@ debug_mode = true
 current_count = 0 -- incremented every clock tick
 
 -- So can play a simple sound
-engine.name = "TestSine"
+--engine.name = "TestSine"
 
-
-global_species_data = nil
 
 
 -- Note: the metro timers are globals so that they can be reused. But
@@ -40,72 +39,6 @@ end
 intro_counter = metro.init(intro_tick, 0.05, -1)
 
 
--- Called when wav file is ready
-local function wav_file_exists_callback(filename)
-  -- Play the wav file
-  softcut_setup_stereo(filename, 1, 2)
-end
-
-
--- Called when png file is ready
-local function png_file_exists_callback(filename)
-  -- png file exists so create the image buffer and determine width and height
-  global_species_data.image_buffer = screen.load_png(filename)
-  global_species_data.width, global_species_data.height = 
-    screen.extents(global_species_data.image_buffer)
-    
-  -- Start the intro animation
-  intro_counter:start()
-end
-
-
-function select_species(species_name)
-  print("Initing select_species(species_name) species="..species_name)
-  
-  -- Load in config for the species
-  global_species_data = getSpeciesData(species_name)
-  global_species_data.species_name = species_name
-  
-  -- Pick random png url for the species
-  local image_data_list = global_species_data.imageDataList
-  local image_idx = math.random(1, #image_data_list)
-  local image_data_tbl = image_data_list[image_idx]
-  local png_url = image_data_tbl.image_url
-  global_species_data.png_filename = getPng(png_url, species_name)
-  
-  -- Start timer for displaying png file once it is ready
-  util.wait(global_species_data.png_filename, png_file_exists_callback, 0.2, 15)
-
-  -- Pick random wav file url for the species
-  local audio_data_list = global_species_data.audioDataList
-  local audio_idx = math.random(1, #audio_data_list)
-  local audio_data = audio_data_list[audio_idx]
-  local wav_url = audio_data.audio_url
-  global_species_data.wav_filename = getWav(wav_url, species_name)
-  
-  -- Start timer for playing wav file once it is ready
-  util.wait(global_species_data.wav_filename, wav_file_exists_callback, 0.4, 20)
-end
-
-
--- Gets list of species and picks one randomely. Then loads in all the info
--- for the species. Returns table containing all of the data associated with the
--- selected species.
-local function init_random_species()
-  print("Determining a random species to use...")
-  
-  -- Get list of all species
-  local species_list = getAllSpeciesList()
-
-  -- Pick a species name by random
-  local idx = math.random(1, #species_list)
-  local random_species_name = species_list[idx]
-  print("Using species "..random_species_name)
-  
-  select_species(random_species_name)
-end
-
-
 function init()
   print("Initing Taweeet...")
   
@@ -115,10 +48,10 @@ function init()
   parameters_init()
 
   -- Initialize sound engine
-  engine.hz(40)
+  --engine.hz(40)
   
   --Load in a species
-  init_random_species()
+  select_random_species()
 end
 
 
@@ -150,13 +83,13 @@ function redraw(called_from_clock_tick)
   -- Draw some vertically moving name of the species.
   -- First draw a darker rectangle so text will be readable. And to
   -- do that first need to figure out proper font size for the species name.
-  screen.font_face(3)
+  screen.font_face(7)
   local font_size = 15 -- Will actually start with font 14
   local horiz_padding = 4
   repeat  
     font_size = font_size - 1
     screen.font_size(font_size)
-    text_width = screen.text_extents(global_species_data.species_name)
+    text_width = screen.text_extents(global_species_data.speciesName)
   until (text_width <= 128)
   
   -- rectangle_x is static and easy to determine
@@ -173,15 +106,15 @@ function redraw(called_from_clock_tick)
   end
   
   -- Draw rectangle on screen so that text shows up better
-  screen.level(5)
-  screen.rect (rectangle_x, rectangle_y, text_width + 2*horiz_padding, font_size+1)
+  screen.level(3)
+  screen.rect(rectangle_x, rectangle_y, text_width + 2*horiz_padding, font_size+1)
   screen.fill()
   
   -- Draw species name on screen over the rectangle
   screen.level(15)
-  screen.aa(0)
+  screen.aa(1) -- Found that font 7 Roboto-Bold at large size looks better with anti-aliasing
   screen.move(rectangle_x + horiz_padding, rectangle_y - 2 + font_size)
-  screen.text(global_species_data.species_name)
+  screen.text(global_species_data.speciesName)
   
   -- update so that drawing actually visible
   screen.update()
@@ -204,14 +137,26 @@ function key(n, down)
     jump_to_edit_params_screen()
   end
   
-  if n == 3 and down == 1 then
-    print("button 3 down")
+  -- When key2 pressed select another species randomly
+  if n == 2 and down == 1 then
+    util.debug_tprint("Key2 pressed")
+    select_random_species()
   end
   
+  -- When key3 pressed select a PNG and a WAV file for the species randomly
+  if n == 3 and down == 1 then
+    util.debug_tprint("Key3 pressed")
+    select_random_png()
+    select_random_wav()
+  end
+  
+  -- When key2 pressed
   if n == 2 then
-    engine.hz(100 + 100*down)
+    -- Change the signwave being played
+    -- engine.hz(100 + 100*down)
   end
 end
+
 
 function enc(n, delta)
   print("n=" .. n .. " delta=" .. delta)
