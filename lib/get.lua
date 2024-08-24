@@ -4,8 +4,8 @@ include "lib/util"
 
 -- Hostname of the webserver. At first just using behind the router IP address of 
 -- macbook where running the webserver
-local hostname = "http://192.168.4.27"
-local port = "8080"
+local hostname = "http://taweeet.mywire.org"
+local port = "80"
 
 
 function getPng(url, species_name)
@@ -22,7 +22,7 @@ function getPng(url, species_name)
     -- returns quickly, wihtout waiting for file to be created, downloaded,
     -- and saved. Note: to return quickly must use os.execute() instead of 
     -- something like util.execute_command() that waits for results.
-    local cmd = "curl --compressed --silent --max-time 10 --insecure " .. 
+    local cmd = "curl --compressed --silent --max-time 15 --insecure " .. 
       "--create-dirs --output " .. filename .. 
       " --output-dir " .. dir .. 
       " \"" .. hostname .. ":" .. port .. "/pngFile?url=" .. url ..
@@ -52,7 +52,7 @@ function getWav(url, species_name)
     -- returns quickly, wihtout waiting for file to be created, downloaded,
     -- and saved. Note: to return quickly must use os.execute() instead of 
     -- something like util.execute_command() that waits for results.
-    local cmd = "curl --compressed --silent --max-time 10 --insecure " .. 
+    local cmd = "curl --compressed --silent --max-time 30 --insecure " .. 
       "--create-dirs --output " .. filename .. 
       " --output-dir " .. dir .. 
       " \"" .. hostname .. ":" .. port .. "/wavFile?url=" .. url ..
