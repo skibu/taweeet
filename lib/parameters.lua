@@ -7,7 +7,7 @@ local initializing = true
 
 local group_timer = nil
 
--- Called when user stop changing the group selector
+-- Called when user stops changing the group selector for a bit
 local function group_timer_expired()
   group_selected = params:string("groups")
   species_list = getSpeciesForGroup(group_selected)
@@ -37,7 +37,7 @@ end
 
 local species_timer = nil
 
--- Called when user stop changing the species selector has not changed for a bit.
+-- Called when user stops changing the species selector for a bit
 local function species_timer_expired()
   -- New species selected. 
   util.debug_tprint("Species selected is: "..params:string("species"))
@@ -58,11 +58,26 @@ local function species_changed_by_encoder(index)
 end
 
 
+-- Called when user selects an image file for the species. Loads and shows that file.
+local function image_changed_by_encoder(index)
+  util.debug_tprint("image_changed_by_encoder() index="..index)
+end
+
+
+-- Called when user selects an audio file for the species. Loads and plays that file.
+local function audio_changed_by_encoder(index)
+  util.debug_tprint("audio_changed_by_encoder() index="..index)
+end
+
+
 -- For when species is selected outside of parameters menu, such as when key2 pressed
-function update_parameters_for_new_species(species_name, group_name)
-  util.debug_tprint("Updating parameters for species="..species_name.." group_name="..group_name)
+function update_parameters_for_new_species(species_data)
+  local group_name = species_data.groupName
+  local species_name = species_data.speciesName
   
-  -- Update group selector
+  util.debug_tprint("Updating parameters for species="..species_name.." group="..group_name)
+  
+  -- Update group selector to be the group for the specified species
   local groups_param = params:lookup_param("groups")
   for i=1, groups_param.count do
     -- If found the right group, select it
@@ -86,6 +101,22 @@ function update_parameters_for_new_species(species_name, group_name)
       break
     end
   end
+  
+  -- Update the image selector
+  local images_list = {}
+  for i, image_data in ipairs(species_data.imageDataList) do
+    local str = "+"..image_data.rating.." "..image_data.catalog.." "..image_data.loc
+    -- FIXME Should just use loc???
+    str = "+"..image_data.rating.." "..image_data.loc:gsub("United States", "US")
+    table.insert(images_list, str)
+  end
+  local images_param = params:lookup_param("images")
+  images_param.options = images_list
+  images_param.count = #images_list
+  images_param.selected = 1 -- FIXME
+  
+  -- Update the audio selector
+  --FIXME
 end
 
 
@@ -118,7 +149,15 @@ function parameters_init()
   -- for the group yet. Therefore just using empty list for now.
   params:add_option("species","Species:", {})
   params:set_action(params.lookup["species"], species_changed_by_encoder)
-    
+  
+  -- Image selector. Since don't yet know the species, have to set it to empty list for now
+  params:add_option("images","Image:", {})
+  params:set_action(params.lookup["images"], image_changed_by_encoder)
+  
+  -- Audio selector. Since don't yet know the species, have to set it to empty list for now
+  params:add_option("audio","Audio:", {})
+  params:set_action(params.lookup["audio"], audio_changed_by_encoder)
+  
   -- Adding some other params just to play around
   params:add_separator("test params, for fun")
   params:add_number("something1", "something1", 20, 240,88)
