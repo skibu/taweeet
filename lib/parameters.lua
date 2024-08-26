@@ -105,10 +105,26 @@ function update_parameters_for_new_species(species_data)
   -- Update the image selector
   local images_list = {}
   for i, image_data in ipairs(species_data.imageDataList) do
-    local str = "+"..image_data.rating.." "..image_data.catalog.." "..image_data.loc
-    -- FIXME Should just use loc???
-    str = "+"..image_data.rating.." "..image_data.loc:gsub("United States", "US")
-    table.insert(images_list, str)
+    -- Determine title to use. If title specified in the JSON data then use it
+    local title
+    if image_data.title then
+      title = image_data.title
+    else
+      -- If should use catalog
+      --title = "+"..image_data.rating.." Ebird "..image_data.catalog
+      
+      -- If should use location. 
+      -- Shorten the country name. List of codes is at https://www.iban.com/country-codes
+      title = "+"..image_data.rating.." "..
+        image_data.loc:gsub("United States", "USA")
+                      :gsub("California", "CA")
+                      :gsub("Indiana", "IN") -- Needs to be before "India"
+                      :gsub("Brazil", "BRA")
+                      :gsub("Germany", "DEU")
+                      :gsub("India", "IND")
+                      :gsub("Thailand", "THA")
+    end
+    table.insert(images_list, title)
   end
   local images_param = params:lookup_param("images")
   images_param.options = images_list
@@ -133,7 +149,7 @@ function parameters_init()
 
   -- Group timer used to not call group_changed() callback until after encoder
   -- has stopped moving for a bit. This greatly reduces the number of callbacks
-  group_timer = metro.init(group_timer_expired, 0.7, 1)
+  group_timer = metro.init(group_timer_expired, 1.0, 1)
 
   -- Group selector. Since groups_list doesn't change, the selector can be 
   -- fully created
@@ -143,7 +159,7 @@ function parameters_init()
   
   -- Species timer used to not call species_changed() callback until after encoder
   -- has stopped moving for a bit. This greatly reduces the number of callbacks
-  species_timer = metro.init(species_timer_expired, 0.7, 1)
+  species_timer = metro.init(species_timer_expired, 1.0, 1)
 
   -- Species selector. Since group not yet selected, cannot set the species list 
   -- for the group yet. Therefore just using empty list for now.
