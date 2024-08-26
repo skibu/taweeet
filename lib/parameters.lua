@@ -114,12 +114,28 @@ function update_parameters_for_new_species(species_data)
       --title = "+"..image_data.rating.." Ebird "..image_data.catalog
       
       -- If should use location. 
-      -- Shorten the country name. List of codes is at https://www.iban.com/country-codes
+      -- Shorten the country name. List of codes is at https://www.iban.com/country-codes .
+      -- State ones at https://www.faa.gov/air_traffic/publications/atpubs/cnt_html/appendix_a.html
       title = "+"..image_data.rating.." "..
         image_data.loc:gsub("United States", "USA")
                       :gsub("California", "CA")
+                      :gsub("Colorado", "CO")
+                      :gsub("Florida", "FL")
+                      :gsub("Idaho", "ID")
                       :gsub("Indiana", "IN") -- Needs to be before "India"
+                      :gsub("Louisiana", "LA")
+                      :gsub("Mississippi", "MS")
+                      :gsub("North Carolina", "NC")
+                      :gsub("Pennsylvania", "PA")
+                      :gsub("Texas", "TX")
+                      :gsub("Washington", "WA")
+                      
                       :gsub("Brazil", "BRA")
+                      
+                      :gsub("Canada", "CAN")
+                      :gsub("Alberta", "AB")
+                      :gsub("Quebec", "QC")
+                      
                       :gsub("Germany", "DEU")
                       :gsub("India", "IND")
                       :gsub("Thailand", "THA")
