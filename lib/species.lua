@@ -1,14 +1,21 @@
 global_species_data = nil
 
--- Called when wav file is ready
+-- Called once wav file is ready
 local function wav_file_exists_callback(filename)
   -- Play the wav file
   softcut_setup_stereo(filename, 1, 2)
 end
 
 
--- Called when png file is ready
+-- Called once png file is ready
 local function png_file_exists_callback(filename)
+  -- If already created an image buffer then first free the old one
+  if global_species_data.image_buffer ~= nil then
+    util.debug_tprint("Freeing image buffer "..tostring(global_species_data.image_buffer))
+    screen.free(global_species_data.image_buffer)
+    global_species_data.image_buffer = nil
+  end
+    
   -- png file exists so create the image buffer and determine width and height
   global_species_data.image_buffer = screen.load_png(filename)
   global_species_data.width, global_species_data.height = 
@@ -19,6 +26,16 @@ local function png_file_exists_callback(filename)
 end
 
 
+-- Loads in the specified png file and then once it is fully loaded 
+-- png_file_exists_callback() will be called to finish processing.
+function select_png(png_url, species_name)
+  global_species_data.png_filename = getPng(png_url, global_species_data.speciesName)
+  
+  -- Start timer for displaying png file once it is ready
+  util.wait(global_species_data.png_filename, png_file_exists_callback, 0.2, 15)
+end
+
+
 -- Selects randomly a png to use for the currently selected species. The currently
 -- selected species is specified by global_species_data. 
 function select_random_png()
@@ -26,11 +43,20 @@ function select_random_png()
   local image_data_list = global_species_data.imageDataList
   local image_idx = math.random(1, #image_data_list)
   local image_data_tbl = image_data_list[image_idx]
-  local png_url = image_data_tbl.image_url
-  global_species_data.png_filename = getPng(png_url, global_species_data.speciesName)
+  local png_url = image_data_tbl.imageUrl
+  util.debug_tprint("Selected random image image_idx="..image_idx.." png_url="..png_url.." for species="..global_species_data.speciesName)
   
-  -- Start timer for displaying png file once it is ready
-  util.wait(global_species_data.png_filename, png_file_exists_callback, 0.2, 15)
+  select_png(png_url, global_species_data.speciesName)
+end
+
+
+-- Loads in the specified wav file and then once it is fully loaded 
+-- xwav_file_exists_callback() will be called to finish processing.
+function select_wav(wav_url, species_name)
+  global_species_data.wav_filename = getWav(wav_url, species_name)
+
+  -- Start timer for playing wav file once it is ready
+  util.wait(global_species_data.wav_filename, wav_file_exists_callback, 0.4, 20)
 end
 
 
@@ -40,18 +66,18 @@ function select_random_wav()
   local audio_data_list = global_species_data.audioDataList
   local audio_idx = math.random(1, #audio_data_list)
   local audio_data = audio_data_list[audio_idx]
-  local wav_url = audio_data.audio_url
-  global_species_data.wav_filename = getWav(wav_url, global_species_data.speciesName)
-
-  -- Start timer for playing wav file once it is ready
-  util.wait(global_species_data.wav_filename, wav_file_exists_callback, 0.4, 20)
+  local wav_url = audio_data.audioUrl
+  util.debug_tprint("Selected random audio audio_idx="..audio_idx.." wav_url="..wav_url.." for species="..global_species_data.speciesName)
+  
+  -- Actually select that url
+  select_wav(wav_url, global_species_data.speciesName)
 end
 
 
 -- Selects the species specified. Also picks a PNG file and a WAV file randomly.
 -- Stores the current settings in global_species_data.
 function select_species(species_name)
-  print("Initing select_species(species_name) species="..species_name)
+  util.tprint("Initing select_species(species_name) species="..species_name)
   
   -- Load in config for the species
   global_species_data = getSpeciesData(species_name)
