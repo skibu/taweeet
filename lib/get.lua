@@ -107,13 +107,25 @@ local function getLuaTableFromImager(command)
 end
 
   
--- Gets the data associated with the specified species. Includes list urls for 
--- both images and audio.  
+-- Gets the data associated with the specified species. Includes list of urls for 
+-- both images and audio. Uses local file cache.
 function getSpeciesData(species_name)
+  -- If already have it in file cache then return it
+  local cache_filename = getSpeciesDirectory(species_name) .. "/speciesDataCache.json"
+  local species_data = json.read(cache_filename)
+  if species_data ~= nil then 
+    util.debug_tprint("Returning species data from file cache for "..species_name)
+    return species_data
+  end
+  
   util.tprint("Getting data for species "..species_name.."...")
-  species = getLuaTableFromImager("/dataForSpecies?s="..util.urlencode(species_name))
-  util.tprint("Done retrieving data for species")
-  return species
+  species_data = getLuaTableFromImager("/dataForSpecies?s="..util.urlencode(species_name))
+  
+  -- Write data to cache
+  json.write(species_data, cache_filename)
+  
+  util.tprint("Done retrieving data for species "..species_name)
+  return species_data
 end
 
   
@@ -131,7 +143,7 @@ function getAllSpeciesList()
   -- Determine file name for the cache file
   local cache_filename = getAppDirectory() .. "/allSpeciesList.json"
 
-  -- If already have it in cache then return it
+  -- If already have it in file cache then return it
   local species_list = json.read(cache_filename)
   if species_list ~= nil then 
     -- Store in memory cache
