@@ -17,7 +17,7 @@ end
 -- use the catalog identifier, something like ML928372. This way can much more easily lookup the
 -- original data. But if not a cornell catalog item, use a hash.
 function file_identifier(url)
-  if string.find(url, 'cornell.edu') ~= -1 and string.find(url, '/asset/') ~= -1 then
+  if string.find(url, 'cornell.edu') ~= nil and string.find(url, '/asset/') ~= nil then
     -- Special cornell URL so use the catalog number
     after_asset = string.sub(url, string.find(url, '/asset/')+7, -1)
     return 'ML' .. string.sub(after_asset, 1, string.find(after_asset, '/')-1)
