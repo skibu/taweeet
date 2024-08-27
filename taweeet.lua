@@ -16,7 +16,7 @@ include "lib/softcutUtil"
 include "lib/parameters"
 
 
-debug_mode = true
+debug_mode = false
 current_count = 0 -- incremented every clock tick
 
 -- So can play a simple sound
@@ -39,8 +39,22 @@ end
 intro_counter = metro.init(intro_tick, 0.05, -1)
 
 
+-- For creating splash image as Norns png can put an image on google drive and then
+-- get a link to it, and then call Imager/getPng() to convert the image. If need to
+-- encode the url can use https://www.urlencoder.org/.
+local function displaySplashImage()
+  -- Display splash image
+  screen.clear()
+  screen.display_png("/home/we/dust/code/taweeet/images/splash.png", 0, 0)
+  screen.update()
+end
+
+
 function init()
-  print("Initing Taweeet...")
+  displaySplashImage()
+
+  print("============================================")
+  util.tprint("Initing Taweeet...")
   
   -- Startup softcut
   softcut_init()
@@ -56,11 +70,17 @@ end
 
 
 function redraw(called_from_clock_tick)
-  -- If called be the system then the png and wav files might not
-  -- yet be ready. So only continue if called by intro_tick()
-  if not called_from_clock_tick then return end
+  -- If called by the system then the png and wav files might not
+  -- yet be ready. So only continue if called by intro_tick(). But
+  -- need to display splash image here because if displayed it 
+  -- prevoiusly via init() then it gets erased just before redraw()
+  -- is called by the system.
+  if not called_from_clock_tick then 
+    displaySplashImage()
+    return 
+  end
   
-  --if debug_mode then print("in redraw()") end
+  util.debug_tprint("Redrawing via redraw()")
   
   -- Always start by clearing screen
   screen.clear()
