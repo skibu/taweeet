@@ -1,7 +1,15 @@
+-- For keeping track of the current species and all of its associated info
+-- like the current sound and image files.
 global_species_data = nil
+
 
 -- Called once wav file is ready
 local function wav_file_exists_callback(filename)
+  -- If the global_species_data.wav_filename has been changed it means that
+  -- the user selected another file. For this situation don't need to do
+  -- anything here since it will be done by the callback for the new filename.
+  if filename ~= global_species_data.wav_filename then return end
+
   -- Play the wav file
   softcut_setup_stereo(filename, 1, 2)
 end
@@ -9,6 +17,11 @@ end
 
 -- Called once png file is ready
 local function png_file_exists_callback(filename)
+  -- If the global_species_data.png_filename has been changed it means that
+  -- the user selected another file. For this situation don't need to do
+  -- anything here since it will be done by the callback for the new filename.
+  if filename ~= global_species_data.png_filename then return end
+  
   -- If already created an image buffer then first free the old one
   if global_species_data.image_buffer ~= nil then
     util.debug_tprint("Freeing image buffer "..tostring(global_species_data.image_buffer))
@@ -21,18 +34,35 @@ local function png_file_exists_callback(filename)
   global_species_data.width, global_species_data.height = 
     screen.extents(global_species_data.image_buffer)
     
-  -- Start the intro animation
-  intro_counter:start()
+  -- Start the intro animation, but only if in app mode
+  startIntroIfInAppMode()
 end
 
 
 -- Loads in the specified png file and then once it is fully loaded 
 -- png_file_exists_callback() will be called to finish processing.
 function select_png(png_url, species_name)
-  global_species_data.png_filename = getPng(png_url, global_species_data.speciesName)
+  -- Initiate the loading of the PNG file and store the filename
+  global_species_data.png_filename = 
+    getPng(png_url, global_species_data.speciesName)
+  
+  -- Need to clear out other related params in global_species_data 
+  -- since they are now not proper
+  global_species_data.width = nil
+  global_species_data.height = nil
+  global_species_data.image_buffer = nil
   
   -- Start timer for displaying png file once it is ready
   util.wait(global_species_data.png_filename, png_file_exists_callback, 0.2, 15)
+end
+
+
+-- Returns true if the current PNG file for the current species has been fully 
+-- loaded and is ready to be displayed. 
+function png_ready()
+  return global_species_data.width ~= nil and 
+    global_species_data.height ~= nil and
+    global_species_data.image_buffer ~= nil
 end
 
 
@@ -44,7 +74,8 @@ function select_random_png()
   local image_idx = math.random(1, #image_data_list)
   local image_data_tbl = image_data_list[image_idx]
   local png_url = image_data_tbl.imageUrl
-  util.debug_tprint("Selected random image image_idx="..image_idx.." png_url="..png_url.." for species="..global_species_data.speciesName)
+  util.tprint("Selected random image image_idx="..image_idx.." png_url="..png_url..
+    " for species="..global_species_data.speciesName)
   
   select_png(png_url, global_species_data.speciesName)
 end
@@ -67,7 +98,8 @@ function select_random_wav()
   local audio_idx = math.random(1, #audio_data_list)
   local audio_data = audio_data_list[audio_idx]
   local wav_url = audio_data.audioUrl
-  util.debug_tprint("Selected random audio audio_idx="..audio_idx.." wav_url="..wav_url.." for species="..global_species_data.speciesName)
+  util.tprint("Selected random audio audio_idx="..audio_idx.." wav_url="..wav_url..
+    " for species="..global_species_data.speciesName)
   
   -- Actually select that url
   select_wav(wav_url, global_species_data.speciesName)
@@ -97,7 +129,7 @@ end
 -- for the species. Returns table containing all of the data associated with the
 -- selected species.
 function select_random_species()
-  print("Determining a random species to use...")
+  util.tprint("Determining a random species to use...")
   
   -- Get list of all species
   local species_list = getAllSpeciesList()
@@ -105,7 +137,7 @@ function select_random_species()
   -- Pick a species name by random
   local idx = math.random(1, #species_list)
   local random_species_name = species_list[idx]
-  print("Using species "..random_species_name)
+  util.tprint("Using species "..random_species_name)
   
   select_species(random_species_name)
 end

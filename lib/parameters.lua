@@ -121,6 +121,7 @@ function update_parameters_for_new_species(species_data)
   end
   
   -- Update the image selector
+  local images_param = params:lookup_param("images")
   local images_list = {}
   for i, image_data in ipairs(species_data.imageDataList) do
     -- Determine title to use. If title specified in the JSON data then use it
@@ -138,13 +139,20 @@ function update_parameters_for_new_species(species_data)
         :gsub(", British Columbia", ", BC")
     end
     table.insert(images_list, title)
+    
+    -- If this is the selected image then set it as the selected item in the param list
+    if image_data.imageUrl == global_species_data.png_filename then
+      util.debug_tprint("Selecting image param index to "..i)
+      images_param.selected = i
+    end
   end
-  local images_param = params:lookup_param("images")
+  
+  -- Finish setting up the image parameter list
   images_param.options = images_list
   images_param.count = #images_list
-  images_param.selected = 1 -- FIXME
   
   -- Update the audio selector
+  local audio_param = params:lookup_param("audio")
   local audio_list = {}
   for i, audio_data in ipairs(species_data.audioDataList) do
     -- Determine title to use. If title specified in the JSON data then use it
@@ -162,11 +170,17 @@ function update_parameters_for_new_species(species_data)
       :gsub(", British Columbia", ", BC")
     end
     table.insert(audio_list, title)
+
+    -- If this is the selected audio then set it as the selected item in the param list
+    if audio_data.audioUrl == global_species_data.wav_filename then
+      util.debug_tprint("Selecting audio param index to "..i)
+      audio_param.selected = i
+    end
   end
-  local audio_param = params:lookup_param("audio")
+  
+  -- Finish setting up the audio parameter list
   audio_param.options = audio_list
   audio_param.count = #audio_list
-  audio_param.selected = 1 -- FIXME
 end
 
 -- For shortening the label strings of parameters so that the value doesn't
@@ -180,10 +194,9 @@ end
 -- Initializes the parameters for the Taweeet application.
 -- To be called from the applications main init() function.
 function parameters_init()
-  print("Initializing parameters...")
+  util.tprint("Initializing parameters...")
   
   -- To help eliminate overlap of parameter values with their labels
-  util.debug_tprint("XXXXXX setting shortener")
   selector_shortener(shortener_function)
   
   -- get rid of standard params so that they are not at the top

@@ -1,13 +1,18 @@
--- Taweeet
+-- Taweeet v0.0.7
 -- Because birdsong is beautiful
--- 0.0.6 attempt
---
--- Click on K3 to start
+-- Click on Key3 to start
+---------------------
+-- Within Taweeet:
+--   key1 = param menu
+--   key2 = new species
+--   key3 = new image & audio
 
 -- Include nornsLib using the full include file manually copied from nornsLib
 include "lib/fullNornsLibInclude"
 
 -- All other includes
+include "lib/splash"
+include "lib/intro"
 include "lib/species"
 include "lib/get"
 include "lib/util"
@@ -16,46 +21,18 @@ include "lib/softcutUtil"
 include "lib/parameters"
 
 
-debug_mode = false
-current_count = 0 -- incremented every clock tick
+debug_mode = true
 
 -- So can play a simple sound
 --engine.name = "TestSine"
 
 
-
--- Note: the metro timers are globals so that they can be reused. But
--- this means that the event functions need to already be declared at
--- this point. Otherwise would just be passing in nil function.
-
--- Animates the intro by updating the global current_count while calling redraw() 
--- repeatedly
-function intro_tick(count)
-  current_count = count
-  redraw(true)
-end
-
--- Timer for doing intro animation
-intro_counter = metro.init(intro_tick, 0.05, -1)
-
-
--- For creating splash image as Norns png can put an image on google drive and then
--- get a link to it, and then call Imager/getPng() to convert the image. If need to
--- encode the url can use https://www.urlencoder.org/.
-local function displaySplashImage()
-  -- Display splash image
-  screen.clear()
-  screen.display_png("/home/we/dust/code/taweeet/images/splash.png", 0, 0)
-  screen.update()
-end
-
-
 function init()
-  displaySplashImage()
-
-  print("============================================")
-  util.tprint("Initing Taweeet...")
+  util.tprint("=============== Initing Taweeet... ===============")
   
+  -- Display splash screen as soon as possible during startup
+  displaySplashScreen()
+
   -- Startup softcut
   softcut_init()
 
@@ -69,87 +46,42 @@ function init()
 end
 
 
-function redraw(called_from_clock_tick)
-  -- If called by the system then the png and wav files might not
-  -- yet be ready. So only continue if called by intro_tick(). But
-  -- need to display splash image here because if displayed it 
-  -- prevoiusly via init() then it gets erased just before redraw()
-  -- is called by the system.
-  if not called_from_clock_tick then 
-    displaySplashImage()
-    return 
-  end
+function redraw()
+  -- Display splash screen, and do so for min of 3.0 seconds. If did indeed
+  -- display splash screen then don't need to continue to display image of
+  -- current species.
+  if displaySpashScreenOnceViaRedraw(1.5) then return end
   
   util.debug_tprint("Redrawing via redraw()")
+  startIntro()
   
-  -- Always start by clearing screen
-  screen.clear()
+  if false then
+    -- Always start by clearing screen
+    screen.clear()
+    
+    -- Determine how to draw image of species in middle of screen
+    png_width = global_species_data.width
+    png_height = global_species_data.height
+    local png_y = (64-png_height)/2
+    local png_x = (128-png_width)/2
+    
+    -- Actually draw the image buffer
+    screen.display_image(global_species_data.image_buffer, png_x, png_y)
+    
+    -- update so that drawing actually visible
+    screen.update()
   
-  -- Draw moving image. Have it scroll left to right until it is in the middle of screen
-  png_width = global_species_data.width
-  png_height = global_species_data.height
-  
-  local png_y = (64-png_height)/2
-  local png_x = -png_width + 6*current_count
-  if png_x > (128-png_width)/2 then 
-    -- Reached desired horizontal position so don't increase png_x anymore
-    --if debug_mode then print("png centered!") end
-    png_x = (128-png_width)/2
+    util.debug_tprint("Done with redraw()")
   end
-  
-  -- Actually draw the image buffer
-  screen.display_image(global_species_data.image_buffer, png_x, png_y)
-  
-  -- Draw some vertically moving name of the species.
-  -- First draw a darker rectangle so text will be readable. And to
-  -- do that first need to figure out proper font size for the species name.
-  screen.font_face(7)
-  local font_size = 15 -- Will actually start with font 14
-  local horiz_padding = 4
-  repeat  
-    font_size = font_size - 1
-    screen.font_size(font_size)
-    text_width = screen.text_extents(global_species_data.speciesName)
-  until (text_width <= 128)
-  
-  -- rectangle_x is static and easy to determine
-  local rectangle_x = (128 - text_width - 2*horiz_padding) / 2
-  
-  -- Since moving downwards but pausing at certain height, rectanble_y is more difficult
-  local rectangle_y_pause = 58 -- Where rectangle should pause
-  local pause_ticks = 60       -- How long to pause there
-  local rectangle_y = current_count - font_size - 1
-  if current_count > rectangle_y_pause and current_count <= rectangle_y_pause + pause_ticks then
-    rectangle_y = rectangle_y_pause - font_size - 1
-  elseif current_count > rectangle_y_pause + pause_ticks then
-    rectangle_y = current_count - pause_ticks - font_size - 1
-  end
-  
-  -- Draw rectangle on screen so that text shows up better
-  screen.level(3)
-  screen.rect(rectangle_x, rectangle_y, text_width + 2*horiz_padding, font_size+1)
-  screen.fill()
-  
-  -- Draw species name on screen over the rectangle
-  screen.level(15)
-  screen.aa(1) -- Found that font 7 Roboto-Bold at large size looks better with anti-aliasing
-  screen.move(rectangle_x + horiz_padding, rectangle_y - 2 + font_size)
-  screen.text(global_species_data.speciesName)
-  
-  -- update so that drawing actually visible
-  screen.update()
-  
-  --if debug_mode then print("Done with redraw()") end
-  
-  if rectangle_y > 64 then
-    intro_counter:stop()
-  end
-  
 end
   
 
 function key(n, down)
   if n == 1 and down == 0 then
+    -- Need to halt intro if it is running. Otherwise the intro 
+    -- clock could cause the the into to overwrite the menu screen.
+    haltIntro()
+    
     -- Key1 up so jump to edit params directly. Don't require it
     -- to be a short press so that it is easier. And use key up
     -- event if used key down then the subsequent key1 up would 

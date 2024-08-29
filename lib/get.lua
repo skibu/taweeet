@@ -6,8 +6,15 @@ include "lib/util"
 -- macbook where running the webserver
 local hostname = "http://taweeet.mywire.org"
 local port = "80"
+--local hostname = "192.168.4.27"
+--local port = "8080"
 
 
+-- Returns PNG file name for the species. If file not already in cache it
+-- gets a PNG file from the Imager website, converts to a wav, stores it, 
+-- and returns the full filename where file stored. The getting of the file
+-- is only initiated, and it might not actually be available when this
+-- function returns.
 function getPng(url, species_name)
   local dir = getSpeciesDirectory(species_name)
   local filename = "image_"..file_identifier(url)..".png"
@@ -15,7 +22,7 @@ function getPng(url, species_name)
   
   -- If file doesn't yet exist then get it and store it
   if not util.file_exists(full_filename) then
-    util.tprint("Creating png file " .. full_filename)
+    util.tprint("Obtaining from Imager png file " .. full_filename)
     
     -- Create curl command that gets and stores the wav file. Note that
     -- using "&" to execute command in background so that this function
@@ -28,16 +35,18 @@ function getPng(url, species_name)
       " \"" .. hostname .. ":" .. port .. "/pngFile?url=" .. url ..
       "&s=".. util.urlencode(species_name) .. "\" &" 
     os.execute(cmd)
-    util.tprint("getPng() executed command=" .. cmd)
+    util.debug_tprint("getPng() executed command=" .. cmd)
   end
   
   return full_filename
 end
 
 
--- Returns sound file for the species. If file not already in cache it
--- gets a sound file from the imager website, converts to a wav, stores it, 
--- and returns the full filename where file stored
+-- Returns sound file name for the species. If file not already in cache it
+-- gets a sound file from the Imager website, converts to a wav, stores it, 
+-- and returns the full filename where file stored. The getting of the file
+-- is only initiated, and it might not actually be available when this
+-- function returns.
 function getWav(url, species_name)
   local dir = getSpeciesDirectory(species_name)
   local filename = "audio_"..file_identifier(url)..".wav"
@@ -45,7 +54,7 @@ function getWav(url, species_name)
 
   -- If file doesn't yet exist then get it and store it
   if not util.file_exists(full_filename) then
-    util.tprint("Creating wav file " .. full_filename)
+    util.tprint("Obtaining from Imager wav file " .. full_filename)
     
     -- Create curl command that gets and stores the wav file. Note that
     -- using "&" to execute command in background so that this function
@@ -59,7 +68,7 @@ function getWav(url, species_name)
       "&s=".. util.urlencode(species_name) .. "\" &"
       
     os.execute(cmd)
-    util.tprint("getWavFile() executed command=" .. cmd)
+    util.debug_tprint("getWav() executed command=" .. cmd)
   end
 
   return full_filename
@@ -118,7 +127,7 @@ function getSpeciesData(species_name)
     return species_data
   end
   
-  util.tprint("Getting data for species "..species_name.."...")
+  util.tprint("Getting config data from Imager for species "..species_name.."...")
   species_data = getLuaTableFromImager("/dataForSpecies?s="..util.urlencode(species_name))
   
   -- Write data to cache
