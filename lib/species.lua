@@ -33,7 +33,10 @@ local function png_file_exists_callback(filename)
   global_species_data.image_buffer = screen.load_png(filename)
   global_species_data.width, global_species_data.height = 
     screen.extents(global_species_data.image_buffer)
-    
+  util.debug_tprint("Loaded png filename="..filename)  
+  util.debug_tprint("====== global_species_data.width="..global_species_data.width..
+    " global_species_data.height="..global_species_data.height)
+  
   -- Start the intro animation, but only if in app mode
   startIntroIfInAppMode()
 end
@@ -45,6 +48,7 @@ function select_png(png_url, species_name)
   -- Initiate the loading of the PNG file and store the filename
   global_species_data.png_filename = 
     getPng(png_url, global_species_data.speciesName)
+  global_species_data.png_url = png_url
   
   -- Need to clear out other related params in global_species_data 
   -- since they are now not proper
@@ -53,7 +57,10 @@ function select_png(png_url, species_name)
   global_species_data.image_buffer = nil
   
   -- Start timer for displaying png file once it is ready
-  util.wait(global_species_data.png_filename, png_file_exists_callback, 0.2, 15)
+  util.wait(global_species_data.png_filename, png_file_exists_callback, 0.2, 20)
+    
+  -- Select proper pgn file in the parameter menu image selector
+  select_current_image(global_species_data)
 end
 
 
@@ -69,6 +76,11 @@ end
 -- Selects randomly a png to use for the currently selected species. The currently
 -- selected species is specified by global_species_data. 
 function select_random_png()
+  -- First should make sure that intro is not running. Otherwise could select a new
+  -- PNG file while the intro still continues to run, and then the intro will try
+  -- to display the new PNG before it is ready.
+  haltIntro()
+  
   -- Pick random png url for the species
   local image_data_list = global_species_data.imageDataList
   local image_idx = math.random(1, #image_data_list)
@@ -85,9 +97,13 @@ end
 -- xwav_file_exists_callback() will be called to finish processing.
 function select_wav(wav_url, species_name)
   global_species_data.wav_filename = getWav(wav_url, species_name)
+  global_species_data.wav_url = wav_url
 
   -- Start timer for playing wav file once it is ready
-  util.wait(global_species_data.wav_filename, wav_file_exists_callback, 0.4, 20)
+  util.wait(global_species_data.wav_filename, wav_file_exists_callback, 0.2, 35)
+  
+  -- Select proper wav file in the parameter menu audio selector
+  select_current_audio(global_species_data)
 end
 
 
@@ -113,6 +129,9 @@ function select_species(species_name)
   
   -- Load in config for the species
   global_species_data = getSpeciesData(species_name)
+  
+  -- Update the parameters menus
+  update_parameters_for_new_species(global_species_data)
 
   -- Pick random png url for the species
   select_random_png()
@@ -120,8 +139,9 @@ function select_species(species_name)
   -- Pick random wav file url for the species
   select_random_wav()
   
-  -- Update the parameters menu
-  update_parameters_for_new_species(global_species_data)
+  -- Update parameter menu image and audio selectors
+  select_current_image(global_species_data)
+  select_current_audio(global_species_data)
 end
 
 
