@@ -17,6 +17,7 @@ intro_counter = metro.init(introTick, 0.05, -1)
 -- getting the PNG in png_file_exists_callback() in species.lua
 function startIntro()
   if png_ready() then
+    util.debug_tprint("startIntro() Starting intro since png now ready")
     intro_counter:start()
   end
 end
@@ -28,6 +29,8 @@ end
 -- intro will be initiated by redraw()
 function startIntroIfInAppMode()
   if not _menu.mode then
+    --print("=========== startIntroIfInAppMode() ====FIXME\n"..debug.traceback())
+    util.debug_tprint("startIntroIfInAppMode Starting intro since in app mode instead of menu mode")
     intro_counter:start()
   end
 end
@@ -43,6 +46,11 @@ end
 -- Called every clock tick when displaying the visual intro for the species
 function displayIntroForSpeciesCallback(current_count)
   --util.debug_tprint("Redrawing via displayIntroForSpeciesCallback()")
+  
+  if not png_ready() then
+    util.debug_tprint("png not ready but in displayIntroForSpeciesCallback()")
+    return
+  end
   
   -- Always start by clearing screen
   screen.clear()
