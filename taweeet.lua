@@ -102,7 +102,7 @@ function key(n, down)
     select_random_wav()
   end
   
-  -- When key2 pressed
+  -- For testing sinewave audio engine, when key2 pressed 
   if n == 2 then
     -- Change the signwave being played
     -- engine.hz(100 + 100*down)
