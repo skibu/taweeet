@@ -88,12 +88,49 @@ local function audio_changed_by_encoder(index)
 end
 
 
+-- Select the proper image in the image param selector. This is done by finding 
+-- the image selection where the url of the image is the same as 
+-- global_species_data.png_filename. This needs to be called only after
+-- image URL has been specified.
+function select_current_image(species_data)
+  util.debug_tprint("Setting image menu param to png_url="..species_data.png_url)
+  for i, image_data in ipairs(species_data.imageDataList) do
+    -- If this is the selected image then set it as the selected item in the param list
+    if image_data.imageUrl == species_data.png_url then
+      util.debug_tprint("Setting image menu param index to "..i)
+      local images_param = params:lookup_param("images")
+      images_param.selected = i
+      return
+    end
+  end
+end
+
+
+-- Select the proper audio in the audio param selector. This is done by finding 
+-- the audio selection where the url of the audio is the same as 
+-- global_species_data.wav_filename. This needs to be called only after
+-- audio URL has been specified.
+function select_current_audio(species_data)
+  util.debug_tprint("Setting audio menu param to wav_url="..species_data.wav_url)
+  for i, audio_data in ipairs(species_data.audioDataList) do
+    -- If this is the selected audio then set it as the selected item in the param list
+    if audio_data.audioUrl == species_data.wav_url then
+      util.debug_tprint("Setting audio menu param index to "..i)
+      local audio_param = params:lookup_param("audio")
+      audio_param.selected = i
+      return
+    end
+  end
+end
+
+
 -- For when species is selected outside of parameters menu, such as when key2 pressed
 function update_parameters_for_new_species(species_data)
   local group_name = species_data.groupName
   local species_name = species_data.speciesName
   
-  util.debug_tprint("Updating parameters for species="..species_name.." group="..group_name)
+  util.debug_tprint("Updating parameters menu for species="..species_name..
+    " group="..group_name)
   
   -- Update group selector to be the group for the specified species
   local groups_param = params:lookup_param("groups")
@@ -134,23 +171,17 @@ function update_parameters_for_new_species(species_data)
       
       -- If should use location. Don't need rating for images since the first
       -- 10 will be +5.
-      title = i..")"..image_data.loc
+      title = i..") "..image_data.loc
         :gsub("Abbreviate this", "ABV")
         :gsub(", British Columbia", ", BC")
     end
     table.insert(images_list, title)
-    
-    -- If this is the selected image then set it as the selected item in the param list
-    if image_data.imageUrl == global_species_data.png_filename then
-      util.debug_tprint("Selecting image param index to "..i)
-      images_param.selected = i
-    end
   end
   
   -- Finish setting up the image parameter list
   images_param.options = images_list
   images_param.count = #images_list
-  
+
   -- Update the audio selector
   local audio_param = params:lookup_param("audio")
   local audio_list = {}
@@ -165,17 +196,11 @@ function update_parameters_for_new_species(species_data)
       
       -- If should use location. Prefix with rating since there are some species
       -- where there aren't very many recordings, and some of them might not be that great.
-      title = i..")".."+"..audio_data.rating.." "..audio_data.loc
+      title = i..") ".."+"..audio_data.rating.." "..audio_data.loc
       :gsub("Abbreviate this", "ABV")
       :gsub(", British Columbia", ", BC")
     end
     table.insert(audio_list, title)
-
-    -- If this is the selected audio then set it as the selected item in the param list
-    if audio_data.audioUrl == global_species_data.wav_filename then
-      util.debug_tprint("Selecting audio param index to "..i)
-      audio_param.selected = i
-    end
   end
   
   -- Finish setting up the audio parameter list
@@ -183,13 +208,15 @@ function update_parameters_for_new_species(species_data)
   audio_param.count = #audio_list
 end
 
+
 -- For shortening the label strings of parameters so that the value doesn't
 -- overlap with the label. Just removing spaces after comma for a slight 
 -- improvement.
 local function shortener_function(value)
-  local result = value:gsub(", ", ",")
+  local result = value:gsub(", ", ","):gsub("%) ", ")")
   return result
 end  
+
 
 -- Initializes the parameters for the Taweeet application.
 -- To be called from the applications main init() function.
