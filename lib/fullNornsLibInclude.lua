@@ -9,7 +9,7 @@ end
 
 -- Include this file if app should auto update nornsLib to pick up the latest
 -- greatest version
-include "nornsLib/updateLib"
+--FIXMEinclude "nornsLib/updateLib"
 
 -- Include the appropriate nornsLib extensions. Or more easily, just load all 
 -- of them- using includeAllExt.
