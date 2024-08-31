@@ -242,7 +242,9 @@ function taweet_params.init()
   -- Group selector. Since groups_list doesn't change, the selector can be 
   -- fully created
   local groups_list = getGroupsList()
-  params:add_option("groups","Group:", groups_list, 1) -- FIXME should set to current group
+  -- Can use "\u{2009}" for half space or "\u{200A}" for even skinnier 
+  -- hair space which is just single pixel
+  params:add_option("groups","\u{200A}Group:", groups_list, 1) -- FIXME should set to current group
   params:set_action(params.lookup["groups"], group_changed_by_encoder)
   
   -- Species timer used to not call species_changed() callback until after encoder
@@ -251,7 +253,7 @@ function taweet_params.init()
 
   -- Species selector. Since group not yet selected, cannot set the species list 
   -- for the group yet. Therefore just using empty list for now.
-  params:add_option("species","Species:", {})
+  params:add_option("species","Taxon.:", {})
   params:set_action(params.lookup["species"], species_changed_by_encoder)
   
   -- Image selector. Since don't yet know the species, have to set it to empty list for now
@@ -259,7 +261,7 @@ function taweet_params.init()
   params:set_action(params.lookup["images"], image_changed_by_encoder)
   
   -- Audio selector. Since don't yet know the species, have to set it to empty list for now
-  params:add_option("audio","Audio:", {})
+  params:add_option("audio","\u{200A}\u{200A}\u{200A}Audio:", {})
   params:set_action(params.lookup["audio"], audio_changed_by_encoder)
   
   -- Adding some other params just to play around
@@ -269,6 +271,7 @@ function taweet_params.init()
   params:add_number("tempo", "tempo", 20, 240,88)
 
   -- Add back the standard params, but so that they are at the end of the page
+  params:add_text("", "") -- A spacer
   params:add_separator("Standard Parameters")
   -- add back standard audio params like LEVELS, REVERB, COMPRESSOR, and SOFTCUT
   audio.add_params()
