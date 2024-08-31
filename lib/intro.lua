@@ -39,16 +39,24 @@ end
 -- Stops the intro counter. Useful for when jumping to parameter menu.
 -- Okay to call even if intro not currently running.
 function haltIntro()
+  util.debug_tprint("Halting intro in intro.haltIntro()")
   intro_counter:stop()
 end
 
+local FIXME_done_before = false
 
 -- Called every clock tick when displaying the visual intro for the species
 function displayIntroForSpeciesCallback(current_count)
   --util.debug_tprint("Redrawing via displayIntroForSpeciesCallback()")
   
   if not png_ready() then
-    util.debug_tprint("png not ready but in displayIntroForSpeciesCallback()")
+    -- Seem to have problem when hit k2 twice, the second time before the first intro finished
+    if not FIXME_done_before then
+      FIXME_done_before = true
+      util.debug_tprint("=== intro_counter.is_running="..intro_counter.is_running)
+      util.debug_tprint(debug.traceback())
+    end
+    util.debug_tprint("=== FIXME === png not ready but in displayIntroForSpeciesCallback()")
     return
   end
   
@@ -112,6 +120,7 @@ function displayIntroForSpeciesCallback(current_count)
   --util.debug_tprint("Done with displayIntroForSpeciesCallback()")
   
   if rectangle_y > 64 then
+    util.debug_tprint("Stopping intro clock because done with animation")
     intro_counter:stop()
   end
 end
