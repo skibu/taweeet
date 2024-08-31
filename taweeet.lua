@@ -50,7 +50,7 @@ function redraw()
   -- Display splash screen, and do so for min of 3.0 seconds. If did indeed
   -- display splash screen then don't need to continue to display image of
   -- current species.
-  if displaySpashScreenOnceViaRedraw(1.5) then return end
+  if displaySpashScreenOnceViaRedraw(1.2) then return end
   
   util.debug_tprint("Redrawing via redraw()")
   startIntro()
