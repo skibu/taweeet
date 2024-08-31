@@ -33,10 +33,7 @@ local function png_file_exists_callback(filename)
   global_species_data.image_buffer = screen.load_png(filename)
   global_species_data.width, global_species_data.height = 
     screen.extents(global_species_data.image_buffer)
-  util.debug_tprint("Loaded png filename="..filename)  
-  util.debug_tprint("====== global_species_data.width="..global_species_data.width..
-    " global_species_data.height="..global_species_data.height)
-  
+
   -- Start the intro animation, but only if in app mode
   startIntroIfInAppMode()
 end
@@ -60,7 +57,7 @@ function select_png(png_url, species_name)
   util.wait(global_species_data.png_filename, png_file_exists_callback, 0.2, 20)
     
   -- Select proper pgn file in the parameter menu image selector
-  select_current_image(global_species_data)
+  taweet_params.select_current_image(global_species_data)
 end
 
 
@@ -103,7 +100,7 @@ function select_wav(wav_url, species_name)
   util.wait(global_species_data.wav_filename, wav_file_exists_callback, 0.2, 35)
   
   -- Select proper wav file in the parameter menu audio selector
-  select_current_audio(global_species_data)
+  taweet_params.select_current_audio(global_species_data)
 end
 
 
@@ -131,7 +128,7 @@ function select_species(species_name)
   global_species_data = getSpeciesData(species_name)
   
   -- Update the parameters menus
-  update_parameters_for_new_species(global_species_data)
+  taweet_params.update_for_new_species(global_species_data)
 
   -- Pick random png url for the species
   select_random_png()
@@ -140,8 +137,8 @@ function select_species(species_name)
   select_random_wav()
   
   -- Update parameter menu image and audio selectors
-  select_current_image(global_species_data)
-  select_current_audio(global_species_data)
+  -- FIXME select_current_image(global_species_data)
+  -- FIXME select_current_audio(global_species_data)
 end
 
 

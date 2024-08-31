@@ -1,4 +1,5 @@
---
+-- Displays the graphical intro for the selected species
+
 
 -- Animates the intro by updating the global current_count while calling
 -- displayIntroForSpeciesCallback repeatedly
@@ -6,9 +7,10 @@ function introTick(count)
   displayIntroForSpeciesCallback(count)
 end
 
+
 -- Timer for doing intro animation. To start the animation call
--- intro_counter:start()
-intro_counter = metro.init(introTick, 0.05, -1)
+-- intro_clock:start()
+local intro_clock = metro.init(introTick, 0.05, -1)
 
 
 -- Initiates the display of the visual introduction for the species, 
@@ -18,7 +20,7 @@ intro_counter = metro.init(introTick, 0.05, -1)
 function startIntro()
   if png_ready() then
     util.debug_tprint("startIntro() Starting intro since png now ready")
-    intro_counter:start()
+    intro_clock:start()
   end
 end
 
@@ -29,9 +31,8 @@ end
 -- intro will be initiated by redraw()
 function startIntroIfInAppMode()
   if not _menu.mode then
-    --print("=========== startIntroIfInAppMode() ====FIXME\n"..debug.traceback())
     util.debug_tprint("startIntroIfInAppMode Starting intro since in app mode instead of menu mode")
-    intro_counter:start()
+    intro_clock:start()
   end
 end
 
@@ -40,23 +41,18 @@ end
 -- Okay to call even if intro not currently running.
 function haltIntro()
   util.debug_tprint("Halting intro in intro.haltIntro()")
-  intro_counter:stop()
+  intro_clock:stop()
 end
 
-local FIXME_done_before = false
 
 -- Called every clock tick when displaying the visual intro for the species
 function displayIntroForSpeciesCallback(current_count)
   --util.debug_tprint("Redrawing via displayIntroForSpeciesCallback()")
   
+  -- To make sure that no longer have problem when hit k2 twice, the second time 
+  -- before the first intro finished
   if not png_ready() then
-    -- Seem to have problem when hit k2 twice, the second time before the first intro finished
-    if not FIXME_done_before then
-      FIXME_done_before = true
-      util.debug_tprint("=== intro_counter.is_running="..intro_counter.is_running)
-      util.debug_tprint(debug.traceback())
-    end
-    util.debug_tprint("=== FIXME === png not ready but in displayIntroForSpeciesCallback()")
+    util.debug_tprint("**** png not ready but tried to display intro displayIntroForSpeciesCallback()")
     return
   end
   
@@ -121,7 +117,7 @@ function displayIntroForSpeciesCallback(current_count)
   
   if rectangle_y > 64 then
     util.debug_tprint("Stopping intro clock because done with animation")
-    intro_counter:stop()
+    intro_clock:stop()
   end
 end
 

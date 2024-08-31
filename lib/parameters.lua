@@ -1,6 +1,9 @@
 -- For managing the parameters that a user can set
 -- Documentation at https://monome.org/docs/norns/reference/params
 
+-- So can have separate namespace for all thesee functions
+local taweet_params = {}
+
 -- So that don't select a species via the selecctors at startup. 
 local initializing = true
 
@@ -92,7 +95,7 @@ end
 -- the image selection where the url of the image is the same as 
 -- global_species_data.png_filename. This needs to be called only after
 -- image URL has been specified.
-function select_current_image(species_data)
+function taweet_params.select_current_image(species_data)
   util.debug_tprint("Setting image menu param to png_url="..species_data.png_url)
   for i, image_data in ipairs(species_data.imageDataList) do
     -- If this is the selected image then set it as the selected item in the param list
@@ -110,7 +113,7 @@ end
 -- the audio selection where the url of the audio is the same as 
 -- global_species_data.wav_filename. This needs to be called only after
 -- audio URL has been specified.
-function select_current_audio(species_data)
+function taweet_params.select_current_audio(species_data)
   util.debug_tprint("Setting audio menu param to wav_url="..species_data.wav_url)
   for i, audio_data in ipairs(species_data.audioDataList) do
     -- If this is the selected audio then set it as the selected item in the param list
@@ -125,7 +128,7 @@ end
 
 
 -- For when species is selected outside of parameters menu, such as when key2 pressed
-function update_parameters_for_new_species(species_data)
+function taweet_params.update_for_new_species(species_data)
   local group_name = species_data.groupName
   local species_name = species_data.speciesName
   
@@ -220,7 +223,7 @@ end
 
 -- Initializes the parameters for the Taweeet application.
 -- To be called from the applications main init() function.
-function parameters_init()
+function taweet_params.init()
   util.tprint("Initializing parameters...")
   
   -- To help eliminate overlap of parameter values with their labels
@@ -277,3 +280,4 @@ function parameters_init()
   util.tprint("Done with params_init()")
 end
 
+return taweet_params

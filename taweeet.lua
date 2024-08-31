@@ -18,7 +18,7 @@ include "lib/get"
 include "lib/util"
 include "lib/cache"
 include "lib/softcutUtil"
-include "lib/parameters"
+taweet_params = include "lib/parameters"
 
 
 debug_mode = true
@@ -36,7 +36,7 @@ function init()
   -- Startup softcut
   softcut_init()
 
-  parameters_init()
+  taweet_params.init()
 
   -- Initialize sound engine
   --engine.hz(40)
@@ -91,13 +91,13 @@ function key(n, down)
   
   -- When key2 pressed select another species randomly
   if n == 2 and down == 1 then
-    util.debug_tprint("Key2 pressed")
+    util.debug_tprint("---Key2--- pressed")
     select_random_species()
   end
   
   -- When key3 pressed select a PNG and a WAV file for the species randomly
   if n == 3 and down == 1 then
-    util.debug_tprint("Key3 pressed")
+    util.debug_tprint("---Key3--- pressed")
     select_random_png()
     select_random_wav()
   end
