@@ -135,10 +135,6 @@ function select_species(species_name)
 
   -- Pick random wav file url for the species
   select_random_wav()
-  
-  -- Update parameter menu image and audio selectors
-  -- FIXME select_current_image(global_species_data)
-  -- FIXME select_current_audio(global_species_data)
 end
 
 
