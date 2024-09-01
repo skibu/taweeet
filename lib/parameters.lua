@@ -177,6 +177,9 @@ function taweet_params.update_for_new_species(species_data)
       title = i..") "..image_data.loc
         :gsub("Abbreviate this", "ABV")
         :gsub(", British Columbia", ", BC")
+        :gsub(", Russia", ", RUS")
+        :gsub(", Israel", ", ISR")
+        :gsub(", England", ", GB")
     end
     table.insert(images_list, title)
   end
@@ -202,6 +205,9 @@ function taweet_params.update_for_new_species(species_data)
       title = i..") ".."+"..audio_data.rating.." "..audio_data.loc
       :gsub("Abbreviate this", "ABV")
       :gsub(", British Columbia", ", BC")
+      :gsub(", Russia", ", RUS")
+      :gsub(", Israel", ", ISR")
+      :gsub(", England", ", GB")
     end
     table.insert(audio_list, title)
   end
@@ -227,7 +233,10 @@ function taweet_params.init()
   util.tprint("Initializing parameters...")
   
   -- To help eliminate overlap of parameter values with their labels
-  selector_shortener(shortener_function)
+  set_selector_shortener(shortener_function)
+  
+  -- I think it looks better if the values are left aligned
+  set_left_align_parameter_values(true)
   
   -- get rid of standard params so that they are not at the top
   params:clear()
