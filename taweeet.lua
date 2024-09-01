@@ -1,4 +1,4 @@
--- Taweeet v0.0.7
+-- Taweeet v0.0.8
 -- Because birdsong is beautiful
 -- Click on Key3 to start
 ---------------------
