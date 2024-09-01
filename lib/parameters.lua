@@ -253,7 +253,7 @@ function taweet_params.init()
   local groups_list = getGroupsList()
   -- Can use "\u{2009}" for half space or "\u{200A}" for even skinnier 
   -- hair space which is just single pixel
-  params:add_option("groups","\u{200A}Group:", groups_list, 1) -- FIXME should set to current group
+  params:add_option("groups","\u{200A}Group:", groups_list, 1)
   params:set_action(params.lookup["groups"], group_changed_by_encoder)
   
   -- Species timer used to not call species_changed() callback until after encoder
