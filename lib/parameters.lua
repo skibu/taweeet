@@ -280,7 +280,7 @@ function taweet_params.init()
   params:add_number("tempo", "tempo", 20, 240,88)
 
   -- Add back the standard params, but so that they are at the end of the page
-  params:add_text("", "") -- A spacer
+  params:add_text("spacerId2", "", "") -- A spacer
   params:add_separator("Standard Parameters")
   -- add back standard audio params like LEVELS, REVERB, COMPRESSOR, and SOFTCUT
   audio.add_params()
