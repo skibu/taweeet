@@ -21,7 +21,7 @@ include "lib/softcutUtil"
 taweet_params = include "lib/parameters"
 
 
-debug_mode = true
+debug_mode = false
 
 -- So can play a simple sound
 --engine.name = "TestSine"
@@ -31,7 +31,7 @@ function init()
   util.tprint("=============== Initing Taweeet... ===============")
   
   -- Display splash screen as soon as possible during startup
-  displaySplashScreen()
+  display_splash_screen()
 
   -- Startup softcut
   softcut_init()
@@ -50,29 +50,10 @@ function redraw()
   -- Display splash screen, and do so for min of 3.0 seconds. If did indeed
   -- display splash screen then don't need to continue to display image of
   -- current species.
-  if displaySpashScreenOnceViaRedraw(1.2) then return end
+  if display_splash_screen_once_via_redraw(1.0) then return end
   
   util.debug_tprint("Redrawing via redraw()")
   startIntro()
-  
-  if false then
-    -- Always start by clearing screen
-    screen.clear()
-    
-    -- Determine how to draw image of species in middle of screen
-    png_width = global_species_data.width
-    png_height = global_species_data.height
-    local png_y = (64-png_height)/2
-    local png_x = (128-png_width)/2
-    
-    -- Actually draw the image buffer
-    screen.display_image(global_species_data.image_buffer, png_x, png_y)
-    
-    -- update so that drawing actually visible
-    screen.update()
-  
-    util.debug_tprint("Done with redraw()")
-  end
 end
   
 
