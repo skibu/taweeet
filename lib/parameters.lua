@@ -282,7 +282,7 @@ function taweet_params.init()
   -- Adding easy way to get to PSET screen
   params:add_text("spacerId2", "", "") -- A spacer
   params:add_separator("Store or load parameters")
-  params:add_trigger("pset", "PSET >") 
+  params:add_trigger("pset", "Store or Load (PSET) >") 
   params:set_action("pset", jump_to_pset_screen )
   
   -- Add back the standard params, but so that they are at the end of the page
