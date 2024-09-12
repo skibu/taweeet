@@ -133,7 +133,7 @@ function getSpeciesData(species_name)
   -- Write data to cache
   json.write(species_data, cache_filename)
   
-  util.tprint("Done retrieving data for species "..species_name)
+  util.tprint("Done retrieving config data for species "..species_name)
   return species_data
 end
 
@@ -170,13 +170,50 @@ function getAllSpeciesList()
   -- Store in memory cache
   _all_species_list_cache = species_list
   
+  -- Return results
   return species_list
 end
 
 
+local _species_by_group_cache = nil
+
+-- Queries Imager webserver for dictionary of species by group, for all groups.
+-- Use memory or file cache if possible.
+function getSpeciesByGroup()
+  -- Use table from memory cache if it is there
+  if _species_by_group_cache ~= nil then
+    return _species_by_group_cache
+  end
+  
+  -- If already have it in file cache then return it
+  local cache_filename = getAppDirectory() .. "/speciesByGroup.json"
+  local species_by_group = json.read(cache_filename)
+  if species_by_group ~= nil then 
+    util.dprint("Read speciesByGroup from file cache")
+    
+    -- Store in memory cache
+    _species_by_group_cache = species_by_group
+    
+    return species_by_group
+  end
+  
+  -- Get the table from imager
+  util.dprint("Reading speciesByGroup from Imager")
+  species_by_group = getLuaTableFromImager("/speciesByGroup")
+  
+  -- Store in memory and file caches
+  _species_by_group_cache = species_by_group
+  json.write(species_by_group, cache_filename)
+  
+  -- Return results
+  return species_by_group
+end
+  
+  
 local _species_for_group_cache = {}
 
--- Does query to webserver to get list of species for the specified group name
+-- Provides list of species for the specified group name.
+-- But will use memory cache if possible.
 function getSpeciesForGroup(group)
   -- Use table from memory cache if it is there
   local cached_species_for_group = _species_for_group_cache[group]
@@ -185,8 +222,7 @@ function getSpeciesForGroup(group)
   end
   
   -- Get the table
-  local species_for_group_list = getLuaTableFromImager("/speciesForGroup?g="..
-      util.urlencode(group))
+  local species_for_group_list = getSpeciesByGroup()[group]
 
   -- Store in memory cache
   _species_for_group_cache[group] = species_for_group_list
@@ -197,7 +233,7 @@ end
 
 local _groups_list_cache = nil
 
--- Does a query to the webserver and returns table containing array of all group names.
+-- Does a query to the Imager webserver and returns table containing array of all group names.
 -- Caches the value in both memory for super quick access, and on the file system so that
 -- works fast across application restarts.
 function getGroupsList()
