@@ -21,7 +21,7 @@ include "lib/softcutUtil"
 taweet_params = include "lib/parameters"
 
 
-debug_mode = false
+debug_mode = true
 
 -- So can play a simple sound
 --engine.name = "TestSine"
@@ -47,12 +47,12 @@ end
 
 
 function redraw()
-  -- Display splash screen, and do so for min of 3.0 seconds. If did indeed
+  -- Display splash screen, and do so for min of 1.0 seconds. If did indeed
   -- display splash screen then don't need to continue to display image of
   -- current species.
   if display_splash_screen_once_via_redraw(1.0) then return end
   
-  util.debug_tprint("Redrawing via redraw()")
+  util.debug_tprint("Redrawing via taweeet.lua redraw()")
   startIntro()
 end
   
