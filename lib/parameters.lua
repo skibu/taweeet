@@ -4,7 +4,7 @@
 -- So can have separate namespace for all thesee functions
 local taweet_params = {}
 
--- So that don't select a species via the selecctors at startup. 
+-- So that don't select a species via the paramset selectors at startup. 
 local initializing = true
 
 
@@ -281,8 +281,8 @@ function taweet_params.init()
 
   -- Adding easy way to get to PSET screen
   params:add_text("spacerId2", "", "") -- A spacer
-  params:add_separator("Store or load parameters")
-  params:add_trigger("pset", "Store or Load (PSET) >") 
+  params:add_separator("Presets (PSET)")
+  params:add_trigger("pset", "Save, Load, or Delete >") 
   params:set_action("pset", jump_to_pset_screen )
   
   -- Add back the standard params, but so that they are at the end of the page
@@ -293,8 +293,12 @@ function taweet_params.init()
   -- add back clock params
   clock.add_params()
   
+  -- Load in default paramset if there is one
+  params:default()
+  
   -- Done with initializing so making the group and species selectors active
   initializing = false
+  
   util.tprint("Done with params_init()")
 end
 
