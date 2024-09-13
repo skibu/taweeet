@@ -18,8 +18,13 @@ local display_time = 0
 -- min_time: minimum time in seconds that splash screen should be displayed for
 -- returns: true if splash screen displayed
 function display_splash_screen_once_via_redraw(min_time)
+  util.dprint("In display_splash_screen_once_via_redraw()")
+  
   -- If already displayed via redraw then don't need to do it again
-  if splash_screen_displayed_via_redraw then return false end
+  if splash_screen_displayed_via_redraw then 
+    util.dprint("Splash screen already drawn so not doing it again")
+    return false 
+  end
 
   -- If want to make sure splash screen displayed for minimum amount of time.
   -- Need to determine sleep_time before display_splash_screen() is called since
@@ -54,7 +59,7 @@ function display_splash_screen()
   -- Splash image is from git so it is in the app's code directory
   local filename = norns.state.path .. "images/splash.png"
   local width, height = screen.extents(filename)
-  
+
   -- Display splash image
   screen.clear()
   screen.display_png(filename, (128-width)/2, (64-height)/2)
