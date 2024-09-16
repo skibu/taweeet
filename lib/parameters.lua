@@ -22,15 +22,18 @@ local function group_timer_expired()
   species_param.selected = 1 -- select first species in group
   
   -- Actually get species selector to display new value
-  util.debug_tprint("group_timer_expired() so doing species_param.bang()")
+  debug.log("group_timer_expired() so doing species_param.bang()")
   species_param:bang()
 end
 
 
 -- When Group is the selected option this is called for every change of the encoder.
--- Simply restarts the group_timer.
+-- Simply restarts the group_timer. Parameter index is the index in the parameter's 
+-- list that has been selected.
 local function group_changed_by_encoder(index)
-  util.debug_tprint("group_changed_by_encoder() index="..index)
+  debug.log("group_changed_by_encoder() index="..index.." initializing="..tostring(initializing))
+  print(debug.traceback()) -- FIXME
+
   -- Reset timer so that group_timer_expired() will be called only after 
   -- encoder3 stops being turned. This avoids handling too many updates.
   -- And don't select species through selector callbacks at startup
@@ -43,7 +46,7 @@ local species_timer = nil
 -- Called when user stops changing the species selector for a bit
 local function species_timer_expired()
   -- New species selected. 
-  util.debug_tprint("Species selected is: "..params:string("species"))
+  debug.log("Species selected is: "..params:string("species"))
   
   -- Update the application with the new species
   select_species(params:string("species"))
@@ -53,7 +56,7 @@ end
 -- When Species is the selected option this is called for every change of the encoder
 -- Simply restarts the species_timer.
 local function species_changed_by_encoder(index)
-  util.debug_tprint("species_changed_by_encoder() index="..index)
+  debug.log("species_changed_by_encoder() index="..index.." initializing="..tostring(initializing))
   -- Reset timer so that species_timer_expired() will be called only after 
   -- encoder3 stops being turned. This avoids handling too many updates.
   -- And don't select species through a selector at startup
@@ -66,11 +69,11 @@ local function image_changed_by_encoder(index)
   -- If haven't been initialized yet don't need to do anything
   if global_species_data == nil then return end
   
-  util.debug_tprint("image_changed_by_encoder() index="..index)
+  debug.log("image_changed_by_encoder() index="..index)
 
   local species_name = global_species_data.speciesName
   local image_url = global_species_data.imageDataList[index].imageUrl
-  util.debug_tprint("Selected image url="..image_url)
+  debug.log("Selected image url="..image_url)
 
   select_png(image_url, species_name)
 end
@@ -81,11 +84,11 @@ local function audio_changed_by_encoder(index)
   -- If haven't been initialized yet don't need to do anything
   if global_species_data == nil then return end
   
-  util.debug_tprint("audio_changed_by_encoder() index="..index)
+  debug.log("audio_changed_by_encoder() index="..index)
   
   local species_name = global_species_data.speciesName
   local wav_url = global_species_data.audioDataList[index].audioUrl
-  util.debug_tprint("Selected audio url="..wav_url)
+  debug.log("Selected audio url="..wav_url)
 
   select_wav(wav_url, species_name)
 end
@@ -96,11 +99,11 @@ end
 -- global_species_data.png_filename. This needs to be called only after
 -- image URL has been specified.
 function taweet_params.select_current_image(species_data)
-  util.debug_tprint("Setting image menu param to png_url="..species_data.png_url)
+  debug.log("Setting image menu param to png_url="..species_data.png_url)
   for i, image_data in ipairs(species_data.imageDataList) do
     -- If this is the selected image then set it as the selected item in the param list
     if image_data.imageUrl == species_data.png_url then
-      util.debug_tprint("Setting image menu param index to "..i)
+      debug.log("Setting image menu param index to "..i)
       local images_param = params:lookup_param("images")
       images_param.selected = i
       return
@@ -114,11 +117,11 @@ end
 -- global_species_data.wav_filename. This needs to be called only after
 -- audio URL has been specified.
 function taweet_params.select_current_audio(species_data)
-  util.debug_tprint("Setting audio menu param to wav_url="..species_data.wav_url)
+  debug.log("Setting audio menu param to wav_url="..species_data.wav_url)
   for i, audio_data in ipairs(species_data.audioDataList) do
     -- If this is the selected audio then set it as the selected item in the param list
     if audio_data.audioUrl == species_data.wav_url then
-      util.debug_tprint("Setting audio menu param index to "..i)
+      debug.log("Setting audio menu param index to "..i)
       local audio_param = params:lookup_param("audio")
       audio_param.selected = i
       return
@@ -132,7 +135,7 @@ function taweet_params.update_for_new_species(species_data)
   local group_name = species_data.groupName
   local species_name = species_data.speciesName
   
-  util.debug_tprint("Updating parameters menu for species="..species_name..
+  debug.log("Updating parameters menu for species="..species_name..
     " group="..group_name)
   
   -- Update group selector to be the group for the specified species
@@ -290,11 +293,14 @@ function taweet_params.init()
   params:add_separator("Standard Parameters")
   -- add back standard audio params like LEVELS, REVERB, COMPRESSOR, and SOFTCUT
   audio.add_params()
-  -- add back clock params
+  -- Add back clock params. Note: this calls parmset.bang() in clock.lua:317 which
+  -- means that all the parameters will be "banged" and the corresponding callbacks
+  -- will be called indicating that the values have been updated. 
+  -- Though params:bang("clock_tempo") is called, not params:bang(). 
   clock.add_params()
   
   -- Load in default paramset if there is one
-  params:default()
+  --FIXME params:default()
   
   -- Done with initializing so making the group and species selectors active
   initializing = false

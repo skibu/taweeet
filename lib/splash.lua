@@ -18,11 +18,11 @@ local display_time = 0
 -- min_time: minimum time in seconds that splash screen should be displayed for
 -- returns: true if splash screen displayed
 function display_splash_screen_once_via_redraw(min_time)
-  util.dprint("In display_splash_screen_once_via_redraw()")
+  debug.log("In display_splash_screen_once_via_redraw()")
   
   -- If already displayed via redraw then don't need to do it again
   if splash_screen_displayed_via_redraw then 
-    util.dprint("Splash screen already drawn so not doing it again")
+    debug.log("Splash screen already drawn so not doing it again")
     return false 
   end
 
@@ -45,10 +45,10 @@ function display_splash_screen_once_via_redraw(min_time)
     display_splash_screen()
     
     -- Now that splash screen displayed again, sleep so that it is up desired amount of time
-    util.debug_tprint("Sleeping ".. string.format("%.2f", sleep_time)..
+    debug.log("Sleeping ".. string.format("%.2f", sleep_time)..
         " sec to make sure splash screen displayed for min_time="..min_time.." sec")
     util.sleep(sleep_time)
-    util.debug_tprint("Done sleeping for splash screen")
+    debug.log("Done sleeping for splash screen")
   end
 end
 
@@ -68,5 +68,5 @@ function display_splash_screen()
   -- Remember when first displayed in case want to make sure it is displayed
   -- for at least a minimum of time
   display_time = util.time()
-  util.debug_tprint("Splash screen displayed")
+  debug.log("Splash screen displayed")
 end

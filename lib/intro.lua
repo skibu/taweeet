@@ -39,7 +39,7 @@ end
 -- the center of the screen until they are full sized and in proper place. Also
 -- scrolls from top to bottom the text of the name of the current species.
 local function swirling_intro_callback(current_count)
-  --util.debug_tprint("Redrawing via swirling_intro_callback()")
+  --debug.log("Redrawing via swirling_intro_callback()")
   
   -- To make sure that no longer have problem when hit k2 twice, the second time 
   -- before the first intro finished
@@ -113,11 +113,11 @@ local function swirling_intro_callback(current_count)
   -- update so that drawing actually visible
   screen.update()
   
-  --util.debug_tprint("Done with swirling_intro_callback()")
+  --debug.log("Done with swirling_intro_callback()")
   
   -- Done if text rectangle disappeared and done with image animation
   if rectangle_y > 64 and current_count >= animation_ticks and intro_clock ~= nil then
-    util.debug_tprint("Stopping intro clock because done with animation current_count="..current_count.." and animation_ticks="..animation_ticks)
+    debug.log("Stopping intro clock because done with animation current_count="..current_count.." and animation_ticks="..animation_ticks)
     intro_clock:stop()
   end
 end
@@ -127,7 +127,7 @@ end
 -- The original animation which just scrolls the image from left to right.
 -- To be called every clock tick when displaying the visual intro for the species.
 local function original_scroll_image_intro_callback(current_count)
-  util.debug_tprint("Redrawing via original_scroll_image_intro_callback()")
+  debug.log("Redrawing via original_scroll_image_intro_callback()")
   
   -- To make sure that no longer have problem when hit k2 twice, the second time 
   -- before the first intro finished
@@ -192,10 +192,10 @@ local function original_scroll_image_intro_callback(current_count)
   -- update so that drawing actually visible
   screen.update()
   
-  util.debug_tprint("Done with original_scroll_image_intro_callback()")
+  debug.log("Done with original_scroll_image_intro_callback()")
   
   if rectangle_y > 64 then
-    util.debug_tprint("Stopping intro clock because done with animation count="..current_count)
+    debug.log("Stopping intro clock because done with animation count="..current_count)
     intro_clock:stop()
   end
 end
@@ -219,7 +219,7 @@ local intro_clock = metro.init(intro_tick, 0.04, -1)
 -- getting the PNG in png_file_exists_callback() in species.lua
 function startIntro()
   if png_ready() then
-    util.debug_tprint("startIntro() Starting intro since png now ready")
+    debug.log("startIntro() Starting intro since png now ready")
     intro_clock:start()
   end
 end
@@ -231,7 +231,7 @@ end
 -- intro will be initiated by redraw()
 function startIntroIfInAppMode()
   if not _menu.mode then
-    util.debug_tprint("startIntroIfInAppMode() Starting intro since in app mode, not menu mode")
+    debug.log("startIntroIfInAppMode() Starting intro since in app mode, not menu mode")
     intro_clock:start()
   end
 end
@@ -240,7 +240,7 @@ end
 -- Stops the intro counter. Useful for when jumping to parameter menu.
 -- Okay to call even if intro not currently running.
 function haltIntro()
-  util.debug_tprint("Halting intro in intro.haltIntro()")
+  debug.log("Halting intro in intro.haltIntro()")
   intro_clock:stop()
 end
 

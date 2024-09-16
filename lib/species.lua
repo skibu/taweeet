@@ -24,7 +24,7 @@ local function png_file_exists_callback(filename)
   
   -- If already created an image buffer then first free the old one
   if global_species_data.image_buffer ~= nil then
-    util.debug_tprint("Freeing image buffer "..tostring(global_species_data.image_buffer))
+    debug.log("Freeing image buffer "..tostring(global_species_data.image_buffer))
     screen.free(global_species_data.image_buffer)
     global_species_data.image_buffer = nil
   end

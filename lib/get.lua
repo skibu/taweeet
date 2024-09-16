@@ -35,7 +35,7 @@ function getPng(url, species_name)
       " \"" .. hostname .. ":" .. port .. "/pngFile?url=" .. url ..
       "&s=".. util.urlencode(species_name) .. "\" &" 
     os.execute(cmd)
-    util.debug_tprint("getPng() executed command=" .. cmd)
+    debug.log("getPng() executed command=" .. cmd)
   end
   
   return full_filename
@@ -68,7 +68,7 @@ function getWav(url, species_name)
       "&s=".. util.urlencode(species_name) .. "\" &"
       
     os.execute(cmd)
-    util.debug_tprint("getWav() executed command=" .. cmd)
+    debug.log("getWav() executed command=" .. cmd)
   end
 
   return full_filename
@@ -123,7 +123,7 @@ function getSpeciesData(species_name)
   local cache_filename = getSpeciesDirectory(species_name) .. "/speciesDataCache.json"
   local species_data = json.read(cache_filename)
   if species_data ~= nil then 
-    util.debug_tprint("Returning species data from file cache for "..species_name)
+    debug.log("Returning species data from file cache for "..species_name)
     return species_data
   end
   
@@ -189,7 +189,7 @@ function getSpeciesByGroup()
   local cache_filename = getAppDirectory() .. "/speciesByGroup.json"
   local species_by_group = json.read(cache_filename)
   if species_by_group ~= nil then 
-    util.dprint("Read speciesByGroup from file cache")
+    debug.log("Read speciesByGroup from file cache")
     
     -- Store in memory cache
     _species_by_group_cache = species_by_group
@@ -198,7 +198,7 @@ function getSpeciesByGroup()
   end
   
   -- Get the table from imager
-  util.dprint("Reading speciesByGroup from Imager")
+  debug.log("Reading speciesByGroup from Imager")
   species_by_group = getLuaTableFromImager("/speciesByGroup")
   
   -- Store in memory and file caches

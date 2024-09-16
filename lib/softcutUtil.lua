@@ -6,7 +6,7 @@ end
 
 -- Simple setup of looping two stereo channels using buffers 1 & 2 and voice1   
 function softcut_setup_stereo(filename, voice_index_l, voice_index_r) 
-  util.debug_tprint("softcut_setup_stereo() buffers 1 & 2"..
+  debug.log("softcut_setup_stereo() buffers 1 & 2"..
     " voice_index_l="..voice_index_l.." voice_index_r="..voice_index_r..
     " filename="..filename)
   local buffer = softcut_load_file_stereo(filename)
@@ -48,7 +48,7 @@ end
 
 -- Sets up two voices for a stereo channel
 function softcut_setup_voices_stereo(voice_index_l, voice_index_r, length) 
-  util.debug_tprint("softcut_setup_voices_stereo() Setting up voices" ..
+  debug.log("softcut_setup_voices_stereo() Setting up voices" ..
     " voice_index_l=".. voice_index_l .. 
     " voice_index_r=".. voice_index_r .. 
     " length="..length)
@@ -92,7 +92,7 @@ end
 
 -- Resets a mono voice to default values where will loop through an audio buffer
 function softcut_setup_voice_mono(voice_index, buffer_index, length)
-  util.debug_tprint("softcut_setup_voice_mono() Setting up voice ".. voice_index .. 
+  debug.log("softcut_setup_voice_mono() Setting up voice ".. voice_index .. 
     " and buffer_index "..buffer_index.." and length="..length)
 
   -- Enable voice by setting it to 1

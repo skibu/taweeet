@@ -21,13 +21,14 @@ include "lib/softcutUtil"
 taweet_params = include "lib/parameters"
 
 
-debug_mode = true
-
 -- So can play a simple sound
 --engine.name = "TestSine"
 
 
 function init()
+  -- While developing code enable debug logging
+  debug.enable_print(value)
+
   util.tprint("=============== Initing Taweeet... ===============")
   
   -- Display splash screen as soon as possible during startup
@@ -52,7 +53,7 @@ function redraw()
   -- current species.
   if display_splash_screen_once_via_redraw(1.0) then return end
   
-  util.debug_tprint("Redrawing via taweeet.lua redraw()")
+  debug.log("Redrawing via taweeet.lua redraw()")
   startIntro()
 end
   
@@ -72,13 +73,13 @@ function key(n, down)
   
   -- When key2 pressed select another species randomly
   if n == 2 and down == 1 then
-    util.debug_tprint("---Key2--- pressed")
+    debug.log("---Key2--- pressed")
     select_random_species()
   end
   
   -- When key3 pressed select a PNG and a WAV file for the species randomly
   if n == 3 and down == 1 then
-    util.debug_tprint("---Key3--- pressed")
+    debug.log("---Key3--- pressed")
     select_random_png()
     select_random_wav()
   end
