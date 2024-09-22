@@ -4,14 +4,52 @@
 -- So can have separate namespace for all thesee functions
 local taweet_params = {}
 
--- So that don't select a species via the paramset selectors at startup. 
-local initializing = true
+
+-- Called when should actually select the species. This happens when the species_timer
+-- expires or when presets loaded.
+local function select_species_callback()
+  local species_name = params:string("species")
+  
+  -- New species selected. 
+  log.print("Species selected is: "..species_name)
+  
+  if params.in_param_edit_menu() then
+    -- Update the application with the new species. This will also determine random 
+    -- image and audio for the species and update the image and audio Options accordingly
+    select_species_and_random_image_and_audio(species_name)
+  else
+    -- Update everything according to the species
+    select_species(species_name)
+  end    
+end
 
 
-local group_timer = nil
+-- Species timer used to not call species_changed() callback until after encoder
+-- has stopped moving for a bit. This greatly reduces the number of callbacks,
+-- which is important since selecting a group takes a while.
+local species_timer = metro.init(select_species_callback, 0.7, 1)
 
--- Called when user stops changing the group selector for a bit
-local function group_timer_expired()
+
+-- When Species is the selected option this is called for every change of the encoder.
+-- Also called via a param:bang() when presets loaded.
+local function changing_species_callback(index)
+  log.debug("changing_species_callback() index="..index.." in_param_edit_menu()="..tostring(params.in_param_edit_menu()))
+  
+  -- Handle differently if callback called due to encoder turn
+  if params.in_param_edit_menu() then 
+    -- Reset timer so that select_species_callback() will be called only after 
+    -- encoder3 stops being turned. This avoids handling too many updates.
+    species_timer:start() 
+  else
+    -- Update species selection immediately because setting all parameters at once
+    select_species_callback()
+  end
+end
+
+
+-- Called when should actually select the group. This happens when the group_timer
+-- expires or preset loaded
+local function select_group_callback()
   local group_selected = params:string("groups")
   local species_list = getSpeciesForGroup(group_selected)
 
@@ -19,76 +57,67 @@ local function group_timer_expired()
   local species_param = params:lookup_param("species")
   species_param.options = species_list
   species_param.count = #species_list
-  species_param.selected = 1 -- select first species in group
   
-  -- Actually get species selector to display new value
-  debug.log("group_timer_expired() so doing species_param.bang()")
-  species_param:bang()
+  -- If group changed due to encoder change then also update selected species
+  if params.in_param_edit_menu() then
+    species_param.selected = 1 -- select first species in group
+  
+    -- Update species immediately so call the callback directly (don't use bang).
+    -- This will also select random image and audio for the species
+    log.debug("select_group_callback() so calling select_species_callback()")
+    select_species_callback()
+  end
 end
+
+
+-- Group timer used to not call group_changed() callback until after encoder
+-- has stopped moving for a bit. This greatly reduces the number of callbacks,
+-- which is important since selecting a group takes a while.
+local group_timer = metro.init(select_group_callback, 0.7, 1)
 
 
 -- When Group is the selected option this is called for every change of the encoder.
--- Simply restarts the group_timer. Parameter index is the index in the parameter's 
--- list that has been selected.
-local function group_changed_by_encoder(index)
-  debug.log("group_changed_by_encoder() index="..index.." initializing="..tostring(initializing))
-  print(debug.traceback()) -- FIXME
+-- Also called via a param:bang() when preset loaded.
+local function changing_group_callback(index)
+  log.debug("changing_group_callback() index="..index.." in_param_edit_menu()="..tostring(params.in_param_edit_menu()))
 
-  -- Reset timer so that group_timer_expired() will be called only after 
-  -- encoder3 stops being turned. This avoids handling too many updates.
-  -- And don't select species through selector callbacks at startup
-  if not initializing then group_timer:start() end
-end
-
-
-local species_timer = nil
-
--- Called when user stops changing the species selector for a bit
-local function species_timer_expired()
-  -- New species selected. 
-  debug.log("Species selected is: "..params:string("species"))
-  
-  -- Update the application with the new species
-  select_species(params:string("species"))
-end
-
-
--- When Species is the selected option this is called for every change of the encoder
--- Simply restarts the species_timer.
-local function species_changed_by_encoder(index)
-  debug.log("species_changed_by_encoder() index="..index.." initializing="..tostring(initializing))
-  -- Reset timer so that species_timer_expired() will be called only after 
-  -- encoder3 stops being turned. This avoids handling too many updates.
-  -- And don't select species through a selector at startup
-  if not initializing then species_timer:start() end
+  -- Handle differently if callback called due to encoder turn
+  if params.in_param_edit_menu() then 
+    -- Reset timer so that select_group_callback() will be called only after 
+    -- encoder3 stops being turned. This avoids handling too many updates.
+    group_timer:start() 
+  else
+    -- Update group selection immediately because setting all parameters at once
+    select_group_callback()
+  end
 end
 
 
 -- Called when user selects an image file for the species. Loads and shows that file.
-local function image_changed_by_encoder(index)
+local function image_changed_callback(index)
   -- If haven't been initialized yet don't need to do anything
   if global_species_data == nil then return end
   
-  debug.log("image_changed_by_encoder() index="..index)
+  log.debug("image_changed_callback() index="..index)
 
   local species_name = global_species_data.speciesName
   local image_url = global_species_data.imageDataList[index].imageUrl
-  debug.log("Selected image url="..image_url)
+  log.print("Selected image url="..image_url)
 
   select_png(image_url, species_name)
 end
 
 
 -- Called when user selects an audio file for the species. Loads and plays that file.
-local function audio_changed_by_encoder(index)
+local function audio_changed_callback(index)
   -- If haven't been initialized yet don't need to do anything
   if global_species_data == nil then return end
   
-  debug.log("audio_changed_by_encoder() index="..index)
+  log.debug("audio_changed_callback() index="..index)
   
   local species_name = global_species_data.speciesName
   local wav_url = global_species_data.audioDataList[index].audioUrl
-  debug.log("Selected audio url="..wav_url)
+  log.print("Selected audio url="..wav_url)
 
   select_wav(wav_url, species_name)
 end
@@ -99,11 +128,11 @@ end
 -- global_species_data.png_filename. This needs to be called only after
 -- image URL has been specified.
 function taweet_params.select_current_image(species_data)
-  debug.log("Setting image menu param to png_url="..species_data.png_url)
+  log.debug("Setting image menu param to png_url="..species_data.png_url)
   for i, image_data in ipairs(species_data.imageDataList) do
     -- If this is the selected image then set it as the selected item in the param list
     if image_data.imageUrl == species_data.png_url then
-      debug.log("Setting image menu param index to "..i)
+      log.debug("Setting image menu param index to "..i)
       local images_param = params:lookup_param("images")
       images_param.selected = i
       return
@@ -117,11 +146,11 @@ end
 -- global_species_data.wav_filename. This needs to be called only after
 -- audio URL has been specified.
 function taweet_params.select_current_audio(species_data)
-  debug.log("Setting audio menu param to wav_url="..species_data.wav_url)
+  log.debug("Setting audio menu param to wav_url="..species_data.wav_url)
   for i, audio_data in ipairs(species_data.audioDataList) do
     -- If this is the selected audio then set it as the selected item in the param list
     if audio_data.audioUrl == species_data.wav_url then
-      debug.log("Setting audio menu param index to "..i)
+      log.debug("Setting audio menu param index to "..i)
       local audio_param = params:lookup_param("audio")
       audio_param.selected = i
       return
@@ -130,12 +159,17 @@ function taweet_params.select_current_audio(species_data)
 end
 
 
--- For when species is selected outside of parameters menu, such as when key2 pressed
-function taweet_params.update_for_new_species(species_data)
+-- For when species is selected outside of parameters menu, such as when 
+-- parameter preset is loaded. 
+-- Fills all species, audio, and image Options with the choices available
+-- for the species. 
+-- Also sets selected for group and species Options, according to the 
+-- current group and species, though doesn't call bang().
+function taweet_params.update_options_for_new_species(species_data)
   local group_name = species_data.groupName
   local species_name = species_data.speciesName
   
-  debug.log("Updating parameters menu for species="..species_name..
+  log.debug("Updating parameters menu for species="..species_name..
     " group="..group_name)
   
   -- Update group selector to be the group for the specified species
@@ -233,13 +267,13 @@ end
 -- Initializes the parameters for the Taweeet application.
 -- To be called from the applications main init() function.
 function taweet_params.init()
-  util.tprint("Initializing parameters...")
+  log.print("Initializing parameters...")
   
   -- To help eliminate overlap of parameter values with their labels
-  set_selector_shortener(shortener_function)
+  parameterExt.set_selector_shortener(shortener_function)
   
   -- I think it looks better if the values are left aligned
-  set_left_align_parameter_values(true)
+  parameterExt.set_left_align_parameter_values(true)
   
   -- get rid of standard params so that they are not at the top
   params:clear()
@@ -247,34 +281,27 @@ function taweet_params.init()
   -- Nice to separate out the Taweet params
   params:add_separator("Taweet Parameters")
 
-  -- Group timer used to not call group_changed() callback until after encoder
-  -- has stopped moving for a bit. This greatly reduces the number of callbacks
-  group_timer = metro.init(group_timer_expired, 0.7, 1)
-
   -- Group selector. Since groups_list doesn't change, the selector can be 
   -- fully created
   local groups_list = getGroupsList()
   -- Can use "\u{2009}" for half space or "\u{200A}" for even skinnier 
   -- hair space which is just single pixel
-  params:add_option("groups","\u{200A}Group:", groups_list, 1)
-  params:set_action(params.lookup["groups"], group_changed_by_encoder)
+  params:add_option("groups","\u{200A}Group:", groups_list)
+  params:set_action(params.lookup["groups"], changing_group_callback)
   
-  -- Species timer used to not call species_changed() callback until after encoder
-  -- has stopped moving for a bit. This greatly reduces the number of callbacks
-  species_timer = metro.init(species_timer_expired, 0.7, 1)
-
   -- Species selector. Since group not yet selected, cannot set the species list 
   -- for the group yet. Therefore just using empty list for now.
-  params:add_option("species","Taxon.:", {})
-  params:set_action(params.lookup["species"], species_changed_by_encoder)
+  -- Using "Type" instead of "Species" because it is skinnier, living more room for values
+  params:add_option("species"," \u{2009}Type:", {})
+  params:set_action(params.lookup["species"], changing_species_callback)
   
   -- Image selector. Since don't yet know the species, have to set it to empty list for now
   params:add_option("images","Image:", {})
-  params:set_action(params.lookup["images"], image_changed_by_encoder)
+  params:set_action(params.lookup["images"], image_changed_callback)
   
   -- Audio selector. Since don't yet know the species, have to set it to empty list for now
-  params:add_option("audio","\u{200A}\u{200A}\u{200A}Audio:", {})
-  params:set_action(params.lookup["audio"], audio_changed_by_encoder)
+  params:add_option("audio","\u{2009}\u{200A}Audio:", {})
+  params:set_action(params.lookup["audio"], audio_changed_callback)
   
   -- Adding some other params just to play around
   params:add_text("", "") -- A spacer
@@ -286,7 +313,7 @@ function taweet_params.init()
   params:add_text("spacerId2", "", "") -- A spacer
   params:add_separator("Presets (PSET)")
   params:add_trigger("pset", "Save, Load, or Delete >") 
-  params:set_action("pset", jump_to_pset_screen )
+  params:set_action("pset", psetExt.jump_to_pset_screen )
   
   -- Add back the standard params, but so that they are at the end of the page
   params:add_text("spacerId3", "", "") -- A spacer
@@ -299,13 +326,12 @@ function taweet_params.init()
   -- Though params:bang("clock_tempo") is called, not params:bang(). 
   clock.add_params()
   
-  -- Load in default paramset if there is one
-  --FIXME params:default()
-  
-  -- Done with initializing so making the group and species selectors active
-  initializing = false
-  
-  util.tprint("Done with params_init()")
+  -- Load in default paramset if there is one.
+  -- Note: don't need to call params:default() because params:read() also calls bang()
+  log.print("About to read default preset...")
+  params:read()
+
+  log.debug("Done with params_init()")
 end
 
 return taweet_params

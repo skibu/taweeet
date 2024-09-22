@@ -26,11 +26,9 @@ taweet_params = include "lib/parameters"
 
 
 function init()
-  -- While developing code enable debug logging
-  debug.enable_print(value)
+  -- While developing code enable log.debugging
+  log.enable_debug(true)
 
-  util.tprint("=============== Initing Taweeet... ===============")
-  
   -- Display splash screen as soon as possible during startup
   display_splash_screen()
 
@@ -43,7 +41,8 @@ function init()
   --engine.hz(40)
   
   --Load in a species
-  select_random_species()
+  -- FIXME should only do this if didn't read in species from preset file
+  -- FIXME select_random_species()
 end
 
 
@@ -53,7 +52,7 @@ function redraw()
   -- current species.
   if display_splash_screen_once_via_redraw(1.0) then return end
   
-  debug.log("Redrawing via taweeet.lua redraw()")
+  log.debug("Redrawing via taweeet.lua redraw()")
   startIntro()
 end
   
@@ -68,18 +67,18 @@ function key(n, down)
     -- to be a short press so that it is easier. And use key up
     -- event if used key down then the subsequent key1 up would 
     -- switch back from edit params menu to the application screen.
-    jump_to_edit_params_screen()
+    parameterExt.jump_to_edit_params_screen()
   end
   
   -- When key2 pressed select another species randomly
   if n == 2 and down == 1 then
-    debug.log("---Key2--- pressed")
+    log.debug("---Key2--- pressed")
     select_random_species()
   end
   
   -- When key3 pressed select a PNG and a WAV file for the species randomly
   if n == 3 and down == 1 then
-    debug.log("---Key3--- pressed")
+    log.debug("---Key3--- pressed")
     select_random_png()
     select_random_wav()
   end

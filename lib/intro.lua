@@ -39,12 +39,12 @@ end
 -- the center of the screen until they are full sized and in proper place. Also
 -- scrolls from top to bottom the text of the name of the current species.
 local function swirling_intro_callback(current_count)
-  --debug.log("Redrawing via swirling_intro_callback()")
+  --log.debug("Redrawing via swirling_intro_callback()")
   
   -- To make sure that no longer have problem when hit k2 twice, the second time 
   -- before the first intro finished
   if not png_ready() then
-    util.tprint("Error: png not ready but tried to display intro displayIntroForSpeciesCallback()")
+    log.debug("Error: png not ready but tried to display intro displayIntroForSpeciesCallback()")
     return
   end
   
@@ -113,11 +113,9 @@ local function swirling_intro_callback(current_count)
   -- update so that drawing actually visible
   screen.update()
   
-  --debug.log("Done with swirling_intro_callback()")
-  
   -- Done if text rectangle disappeared and done with image animation
   if rectangle_y > 64 and current_count >= animation_ticks and intro_clock ~= nil then
-    debug.log("Stopping intro clock because done with animation current_count="..current_count.." and animation_ticks="..animation_ticks)
+    log.debug("Stopping intro clock because done with animation current_count="..current_count.." and animation_ticks="..animation_ticks)
     intro_clock:stop()
   end
 end
@@ -127,12 +125,12 @@ end
 -- The original animation which just scrolls the image from left to right.
 -- To be called every clock tick when displaying the visual intro for the species.
 local function original_scroll_image_intro_callback(current_count)
-  debug.log("Redrawing via original_scroll_image_intro_callback()")
+  log.debug("Redrawing via original_scroll_image_intro_callback()")
   
   -- To make sure that no longer have problem when hit k2 twice, the second time 
   -- before the first intro finished
   if not png_ready() then
-    util.tprint("Error: png not ready but tried to display intro displayIntroForSpeciesCallback()")
+    log.debug("Error: png not ready but tried to display intro displayIntroForSpeciesCallback()")
     return
   end
   
@@ -192,10 +190,10 @@ local function original_scroll_image_intro_callback(current_count)
   -- update so that drawing actually visible
   screen.update()
   
-  debug.log("Done with original_scroll_image_intro_callback()")
+  log.debug("Done with original_scroll_image_intro_callback()")
   
   if rectangle_y > 64 then
-    debug.log("Stopping intro clock because done with animation count="..current_count)
+    log.debug("Stopping intro clock because done with animation count="..current_count)
     intro_clock:stop()
   end
 end
@@ -219,7 +217,7 @@ local intro_clock = metro.init(intro_tick, 0.04, -1)
 -- getting the PNG in png_file_exists_callback() in species.lua
 function startIntro()
   if png_ready() then
-    debug.log("startIntro() Starting intro since png now ready")
+    log.print("Starting graphical intro since image now available")
     intro_clock:start()
   end
 end
@@ -231,7 +229,7 @@ end
 -- intro will be initiated by redraw()
 function startIntroIfInAppMode()
   if not _menu.mode then
-    debug.log("startIntroIfInAppMode() Starting intro since in app mode, not menu mode")
+    log.debug("startIntroIfInAppMode() Starting intro since in app mode, not menu mode")
     intro_clock:start()
   end
 end
@@ -240,7 +238,7 @@ end
 -- Stops the intro counter. Useful for when jumping to parameter menu.
 -- Okay to call even if intro not currently running.
 function haltIntro()
-  debug.log("Halting intro in intro.haltIntro()")
+  log.debug("Halting intro if still running")
   intro_clock:stop()
 end
 

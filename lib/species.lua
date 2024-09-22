@@ -21,13 +21,6 @@ local function png_file_exists_callback(filename)
   -- the user selected another file. For this situation don't need to do
   -- anything here since it will be done by the callback for the new filename.
   if filename ~= global_species_data.png_filename then return end
-  
-  -- If already created an image buffer then first free the old one
-  if global_species_data.image_buffer ~= nil then
-    debug.log("Freeing image buffer "..tostring(global_species_data.image_buffer))
-    screen.free(global_species_data.image_buffer)
-    global_species_data.image_buffer = nil
-  end
     
   -- png file exists so create the image buffer and determine width and height
   global_species_data.image_buffer = screen.load_png(filename)
@@ -83,7 +76,7 @@ function select_random_png()
   local image_idx = math.random(1, #image_data_list)
   local image_data_tbl = image_data_list[image_idx]
   local png_url = image_data_tbl.imageUrl
-  util.tprint("Selected random image image_idx="..image_idx.." png_url="..png_url..
+  log.debug("Selected random image image_idx="..image_idx.." png_url="..png_url..
     " for species="..global_species_data.speciesName)
   
   select_png(png_url, global_species_data.speciesName)
@@ -111,7 +104,7 @@ function select_random_wav()
   local audio_idx = math.random(1, #audio_data_list)
   local audio_data = audio_data_list[audio_idx]
   local wav_url = audio_data.audioUrl
-  util.tprint("Selected random audio audio_idx="..audio_idx.." wav_url="..wav_url..
+  log.debug("Selected random audio audio_idx="..audio_idx.." wav_url="..wav_url..
     " for species="..global_species_data.speciesName)
   
   -- Actually select that url
@@ -119,16 +112,25 @@ function select_random_wav()
 end
 
 
--- Selects the species specified. Also picks a PNG file and a WAV file randomly.
--- Stores the current settings in global_species_data.
+-- Loads in config for the species and update parameters menu Options
 function select_species(species_name)
-  util.tprint("Initing select_species(species_name) species="..species_name)
+  log.debug("Initing species via select_species(). species="..species_name)
   
   -- Load in config for the species
   global_species_data = getSpeciesData(species_name)
   
-  -- Update the parameters menus
-  taweet_params.update_for_new_species(global_species_data)
+  -- Update the parameters menu
+  taweet_params.update_options_for_new_species(global_species_data)
+end
+
+
+-- Selects the species specified. Also picks a PNG file and a WAV file randomly.
+-- Stores the current settings in global_species_data.
+function select_species_and_random_image_and_audio(species_name)
+  log.debug("Initing species and selecting random image and audio. species="..species_name)
+  
+  -- Load in config for the species and update parameters menu Options
+  select_species(species_name)
 
   -- Pick random png url for the species
   select_random_png()
@@ -142,7 +144,7 @@ end
 -- for the species. Returns table containing all of the data associated with the
 -- selected species.
 function select_random_species()
-  util.tprint("Determining a random species to use...")
+  log.debug("Determining a random species to use...")
   
   -- Get list of all species
   local species_list = getAllSpeciesList()
@@ -150,9 +152,9 @@ function select_random_species()
   -- Pick a species name by random
   local idx = math.random(1, #species_list)
   local random_species_name = species_list[idx]
-  util.tprint("Using species "..random_species_name)
+  log.debug("Using species "..random_species_name)
   
-  select_species(random_species_name)
+  select_species_and_random_image_and_audio(random_species_name)
 end
 
 

@@ -18,11 +18,11 @@ local display_time = 0
 -- min_time: minimum time in seconds that splash screen should be displayed for
 -- returns: true if splash screen displayed
 function display_splash_screen_once_via_redraw(min_time)
-  debug.log("In display_splash_screen_once_via_redraw()")
+  log.debug("In display_splash_screen_once_via_redraw()")
   
   -- If already displayed via redraw then don't need to do it again
   if splash_screen_displayed_via_redraw then 
-    debug.log("Splash screen already drawn so not doing it again")
+    log.debug("Splash screen already drawn so not doing it again")
     return false 
   end
 
@@ -45,10 +45,10 @@ function display_splash_screen_once_via_redraw(min_time)
     display_splash_screen()
     
     -- Now that splash screen displayed again, sleep so that it is up desired amount of time
-    debug.log("Sleeping ".. string.format("%.2f", sleep_time)..
-        " sec to make sure splash screen displayed for min_time="..min_time.." sec")
+    log.debug("Sleeping ".. string.format("%.2f", sleep_time)..
+        "s to make sure splash screen displayed for min_time="..min_time.."s")
     util.sleep(sleep_time)
-    debug.log("Done sleeping for splash screen")
+    log.debug("Done sleeping for splash screen")
   end
 end
 
@@ -58,15 +58,16 @@ end
 function display_splash_screen()
   -- Splash image is from git so it is in the app's code directory
   local filename = norns.state.path .. "images/splash.png"
-  local width, height = screen.extents(filename)
+  local image_buffer = screen.load_png(filename)
+  local width, height = screen.extents(image_buffer)
 
   -- Display splash image
   screen.clear()
-  screen.display_png(filename, (128-width)/2, (64-height)/2)
+  screen.display_image(image_buffer, (128-width)/2, (64-height)/2)
   screen.update()
   
   -- Remember when first displayed in case want to make sure it is displayed
   -- for at least a minimum of time
   display_time = util.time()
-  debug.log("Splash screen displayed")
+  log.print("Splash screen displayed width="..width.." height="..height)
 end

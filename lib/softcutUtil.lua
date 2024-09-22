@@ -6,7 +6,7 @@ end
 
 -- Simple setup of looping two stereo channels using buffers 1 & 2 and voice1   
 function softcut_setup_stereo(filename, voice_index_l, voice_index_r) 
-  debug.log("softcut_setup_stereo() buffers 1 & 2"..
+  log.print("softcut_setup_stereo() buffers 1 & 2"..
     " voice_index_l="..voice_index_l.." voice_index_r="..voice_index_r..
     " filename="..filename)
   local buffer = softcut_load_file_stereo(filename)
@@ -17,7 +17,7 @@ end
 
 -- Simple setup of looping a single mono channel using buffer1 and the voice specified  
 function softcut_setup_mono(filename, buffer_index, voice_index) 
-  util.tprint("softcut_setup_mono() buffer_index="..buffer_index.." voice_index="..voice_index..
+  log.debug("softcut_setup_mono() buffer_index="..buffer_index.." voice_index="..voice_index..
     " filename="..filename)
   local buffer = softcut_load_file_mono(filename, buffer_index)
 
@@ -32,7 +32,7 @@ local buffer_stereo
 
 -- Loads both channels of wav file into two buffers so that can play stereo
 function softcut_load_file_stereo(filename)
-  util.tprint("Loading into stereo buffers wav file="..filename)
+  log.debug("Loading into stereo buffers wav file="..filename)
   
   softcut.buffer_read_stereo(
     filename,
@@ -48,10 +48,10 @@ end
 
 -- Sets up two voices for a stereo channel
 function softcut_setup_voices_stereo(voice_index_l, voice_index_r, length) 
-  debug.log("softcut_setup_voices_stereo() Setting up voices" ..
+  log.debug("Setting up stereo voices" ..
     " voice_index_l=".. voice_index_l .. 
     " voice_index_r=".. voice_index_r .. 
-    " length="..length)
+    " length="..length.."s")
 
   -- Setup left channel
   buffer_index_l = 1
@@ -67,7 +67,7 @@ end
 
 -- Loads left channel of wav file into a buffer.
 local function softcut_load_file_mono(filename, buffer_index)
-  util.tprint("Loading into mono buffer ".. buffer_index .. " wav file="..filename)
+  log.debug("Loading into mono buffer ".. buffer_index .. " wav file="..filename)
   
   softcut.buffer_read_mono(
     filename,
@@ -92,8 +92,8 @@ end
 
 -- Resets a mono voice to default values where will loop through an audio buffer
 function softcut_setup_voice_mono(voice_index, buffer_index, length)
-  debug.log("softcut_setup_voice_mono() Setting up voice ".. voice_index .. 
-    " and buffer_index "..buffer_index.." and length="..length)
+  log.debug("Setting up mono voice ".. voice_index .. 
+    " and buffer_index "..buffer_index.." and length="..length.."s")
 
   -- Enable voice by setting it to 1
   softcut.enable(voice_index, 1)
@@ -142,7 +142,7 @@ function print_wav_file_info(filename)
     print("  channels:\t"..ch)
     print("  samples:\t"..samples)
     print("  sample rate:\t"..samplerate.."hz")
-    print("  duration:\t"..duration.." sec")
+    print("  duration:\t"..duration.."s")
   else 
     print "read_wav(): file not found" 
   end

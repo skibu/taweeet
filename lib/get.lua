@@ -22,7 +22,7 @@ function getPng(url, species_name)
   
   -- If file doesn't yet exist then get it and store it
   if not util.file_exists(full_filename) then
-    util.tprint("Obtaining from Imager png file " .. full_filename)
+    log.debug("Obtaining from Imager png file " .. full_filename)
     
     -- Create curl command that gets and stores the wav file. Note that
     -- using "&" to execute command in background so that this function
@@ -35,7 +35,7 @@ function getPng(url, species_name)
       " \"" .. hostname .. ":" .. port .. "/pngFile?url=" .. url ..
       "&s=".. util.urlencode(species_name) .. "\" &" 
     os.execute(cmd)
-    debug.log("getPng() executed command=" .. cmd)
+    log.debug("getPng() executed command=" .. cmd)
   end
   
   return full_filename
@@ -54,7 +54,7 @@ function getWav(url, species_name)
 
   -- If file doesn't yet exist then get it and store it
   if not util.file_exists(full_filename) then
-    util.tprint("Obtaining from Imager wav file " .. full_filename)
+    log.debug("Obtaining from Imager wav file " .. full_filename)
     
     -- Create curl command that gets and stores the wav file. Note that
     -- using "&" to execute command in background so that this function
@@ -68,7 +68,7 @@ function getWav(url, species_name)
       "&s=".. util.urlencode(species_name) .. "\" &"
       
     os.execute(cmd)
-    debug.log("getWav() executed command=" .. cmd)
+    log.debug("getWav() executed command=" .. cmd)
   end
 
   return full_filename
@@ -123,17 +123,17 @@ function getSpeciesData(species_name)
   local cache_filename = getSpeciesDirectory(species_name) .. "/speciesDataCache.json"
   local species_data = json.read(cache_filename)
   if species_data ~= nil then 
-    debug.log("Returning species data from file cache for "..species_name)
+    log.debug("Returning species data from file cache for "..species_name)
     return species_data
   end
   
-  util.tprint("Getting config data from Imager for species "..species_name.."...")
+  log.debug("Getting config data from Imager for species "..species_name.."...")
   species_data = getLuaTableFromImager("/dataForSpecies?s="..util.urlencode(species_name))
   
   -- Write data to cache
   json.write(species_data, cache_filename)
   
-  util.tprint("Done retrieving config data for species "..species_name)
+  log.debug("Done retrieving config data for species "..species_name)
   return species_data
 end
 
@@ -189,7 +189,7 @@ function getSpeciesByGroup()
   local cache_filename = getAppDirectory() .. "/speciesByGroup.json"
   local species_by_group = json.read(cache_filename)
   if species_by_group ~= nil then 
-    debug.log("Read speciesByGroup from file cache")
+    log.debug("Read speciesByGroup from file cache")
     
     -- Store in memory cache
     _species_by_group_cache = species_by_group
@@ -198,7 +198,7 @@ function getSpeciesByGroup()
   end
   
   -- Get the table from imager
-  debug.log("Reading speciesByGroup from Imager")
+  log.debug("Reading speciesByGroup from Imager")
   species_by_group = getLuaTableFromImager("/speciesByGroup")
   
   -- Store in memory and file caches
