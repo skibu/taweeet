@@ -304,12 +304,12 @@ function taweet_params.init()
   params:set_action(params.lookup["audio"], audio_changed_callback)
   
   -- Adding some other params just to play around
-  params:add_text("", "") -- A spacer
-  params:add_separator("test params, for fun")
-  params:add_number("something1", "something1", 20, 240,88)
-  params:add_number("tempo", "tempo", 20, 240,88)
+  --params:add_text("", "") -- A spacer
+  --params:add_separator("test params, for fun")
+  --params:add_number("something1", "something1", 20, 240,88)
+  --params:add_number("tempo", "tempo", 20, 240,88)
 
-  -- Adding easy way to get to PSET screen
+  -- Adding easy way to get to presets (PSET) screen
   params:add_text("spacerId2", "", "") -- A spacer
   params:add_separator("Presets (PSET)")
   params:add_trigger("pset", "Save, Load, or Delete >") 
