@@ -39,10 +39,6 @@ function init()
 
   -- Initialize sound engine
   --engine.hz(40)
-  
-  --Load in a species
-  -- FIXME should only do this if didn't read in species from preset file
-  -- FIXME select_random_species()
 end
 
 

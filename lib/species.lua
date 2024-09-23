@@ -3,6 +3,12 @@
 global_species_data = nil
 
 
+-- Returns true if a species has been selected. 
+function species_selected()
+  return global_species_data ~= nil
+end
+
+
 -- Called once wav file is ready
 local function wav_file_exists_callback(filename)
   -- If the global_species_data.wav_filename has been changed it means that
@@ -57,7 +63,8 @@ end
 -- Returns true if the current PNG file for the current species has been fully 
 -- loaded and is ready to be displayed. 
 function png_ready()
-  return global_species_data.width ~= nil and 
+  return global_species_data ~= nil and
+    global_species_data.width ~= nil and 
     global_species_data.height ~= nil and
     global_species_data.image_buffer ~= nil
 end

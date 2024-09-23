@@ -326,11 +326,17 @@ function taweet_params.init()
   -- Though params:bang("clock_tempo") is called, not params:bang(). 
   clock.add_params()
   
-  -- Load in default paramset if there is one.
+  -- Load in parameters preset file if there is one.
   -- Note: don't need to call params:default() because params:read() also calls bang()
   log.print("About to read default preset...")
   params:read()
 
+  -- If there was no preset (pset) file that could be loaded, select random species
+  if params:lookup_param("species").count == 0 then
+    -- Load in random species
+    select_random_species()
+  end
+  
   log.debug("Done with params_init()")
 end
 
