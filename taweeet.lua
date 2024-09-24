@@ -68,13 +68,13 @@ function key(n, down)
   
   -- When key2 pressed select another species randomly
   if n == 2 and down == 1 then
-    log.debug("---Key2--- pressed")
+    log.debug("Taweeet Key2 pressed")
     select_random_species()
   end
   
   -- When key3 pressed select a PNG and a WAV file for the species randomly
   if n == 3 and down == 1 then
-    log.debug("---Key3--- pressed")
+    log.debug("Taweeet Key3 pressed")
     select_random_png()
     select_random_wav()
   end
@@ -88,7 +88,7 @@ end
 
 
 function enc(n, delta)
-  print("n=" .. n .. " delta=" .. delta)
+  log.debug("Taweeet encoder changed n=" .. n .. " delta=" .. delta)
 end
 
 
