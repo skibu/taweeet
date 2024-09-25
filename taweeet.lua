@@ -69,12 +69,24 @@ function key(n, down)
   -- When key2 pressed select another species randomly
   if n == 2 and down == 1 then
     log.debug("Taweeet Key2 pressed")
+
+    -- Clear screen so user knows something is happening
+    screen.clear()
+    screen.update()
+    
+    -- Select and display whole new species
     select_random_species()
   end
   
   -- When key3 pressed select a PNG and a WAV file for the species randomly
   if n == 3 and down == 1 then
     log.debug("Taweeet Key3 pressed")
+
+    -- Clear screen so user knows something is happening
+    screen.clear()
+    screen.update()
+    
+    -- Display new random image and audio
     select_random_png()
     select_random_wav()
   end
