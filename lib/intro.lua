@@ -9,6 +9,53 @@ local animation_ticks = 70   -- How many ticks for the swirling animation of the
 local rectangle_y_pause = 58 -- Where species name text rectangle should pause
 local pause_ticks = 30       -- How long to pause there
 
+
+-- Draws filter. To be called via screen.draw_to() so that the drawing will occur
+-- on the specified image. The image is assumed to be full screen, which is
+-- 128x64.
+local function draw_filter(dark_level) 
+  log.debug("====FIXME Drawing to image using dark_level="..tostring(dark_level))
+  
+  -- Make the whole image dark
+  screen.level(dark_level)  
+  screen.rect(0, 0, screen_width, screen_height)
+  screen.fill()
+  
+  -- Draw two level 15 circles to make it sort of look like a view through binoculars
+  screen.level(15)
+  local r = (screen_height / 2) - 3
+  local y = 32
+  screen.circle(32, y, r)
+  screen.fill()
+  screen.circle(96, y, r)
+  screen.fill()
+  
+  screen.current_point() -- FIXME Trying to sync things
+  
+  screen.save() -- FIXME Trying to sync things
+end
+
+
+local filter_cache = nil
+
+-- Creates and returns an image that can serve as a filter for displaying only a
+-- select part of the screen and everything else will be drawn at maximum of the 
+-- dark_level. By using different dark levels the background can be faded in slowly.
+local function create_filter_image(dark_level)
+  if filter_cache ~= nil then return filter_cache end
+  
+  -- Create new image
+  local image = screen.create_image(screen_width, screen_height)
+  
+  -- Draw filter to the image using draw_filter()
+  screen.draw_to(image, draw_filter, dark_level)
+  
+  filter_cache = image
+  
+  return image
+end
+
+
 -- Returns x,y coordinatess of the corner of the intro image to be displayed.
 -- The current_count specifies how far along the animation should be, and 
 -- should come from the intro clock. The offset_degrees parameter is so can
@@ -66,7 +113,7 @@ local function swirling_intro_callback(current_count)
   x, y = get_x_y(current_count, 270.0)
   --screen.display_image_region (test_buffer, 0, 32, 61, 32, 3, 32)
   --screen.display_image_region (image, left, top, width, height, x, y)
-  screen.display_image_region (image_buffer, 0, image_height-height, width, height, x-width, y)
+  screen.display_image_region(image_buffer, 0, image_height-height, width, height, x-width, y)
 
   -- bottom right, tied to right axis
   x, y = get_x_y(current_count, 0.0)
@@ -76,6 +123,13 @@ local function swirling_intro_callback(current_count)
   x, y = get_x_y(current_count, 90.0)
   screen.display_image_region(image_buffer, image_width-width, 0, width, height, x, y-height)
 
+  -- Draw the filterr so that it hopefully looks as if looking through binoculars
+  local filter = create_filter_image(0)
+  screen.blend_mode("Darken") -- FIXME
+  screen.current_point() -- FIXME possibly needed since display_image() is not a queued event so might happen before the other stuff is actually written to the screen
+  screen.display_image(filter, 0, 0)
+  screen.blend_mode("Over")
+  
   -- Draw some vertically moving name of the species.
   -- First draw a darker rectangle so text will be readable. And to
   -- do that first need to figure out proper font size for the species name.
@@ -99,7 +153,7 @@ local function swirling_intro_callback(current_count)
     rectangle_y = current_count - pause_ticks - font_size - 1
   end
   
-  -- Draw rectangle on screen so that text shows up better
+  -- Draw small rectangle on screen so that text shows up better
   screen.level(3)
   screen.rect(rectangle_x, rectangle_y, text_width + 2*horiz_padding, font_size+1)
   screen.fill()
@@ -130,7 +184,7 @@ local function original_scroll_image_intro_callback(current_count)
   -- To make sure that no longer have problem when hit k2 twice, the second time 
   -- before the first intro finished
   if not png_ready() then
-    log.debug("Error: png not ready but tried to display intro displayIntroForSpeciesCallback()")
+    log.error("png not ready but tried to display intro displayIntroForSpeciesCallback()")
     return
   end
   
@@ -176,7 +230,7 @@ local function original_scroll_image_intro_callback(current_count)
     rectangle_y = current_count - pause_ticks - font_size - 1
   end
   
-  -- Draw rectangle on screen so that text shows up better
+  -- Draw small rectangle on screen so that text shows up better
   screen.level(3)
   screen.rect(rectangle_x, rectangle_y, text_width + 2*horiz_padding, font_size+1)
   screen.fill()
@@ -203,6 +257,9 @@ end
 -- swirling_intro_callback repeatedly
 function intro_tick(count)
   swirling_intro_callback(count)
+  
+  -- Trying to collect garbage of the many image buffers created for the intro
+  -- collectgarbage() -- FIXME
 end
 
 
