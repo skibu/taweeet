@@ -1,6 +1,14 @@
 -- For keeping track of the current species and all of its associated info
 -- like the current sound and image files.
+-- {png_url, png_filename, image_buffer, width, height, wav_filename, imageDataList, 
+--  audioDataList, speciesCode, speciesName, sciName}
 global_species_data = nil
+
+
+-- Returns currently selected species name, or nil if no species selected
+function species_name()
+  return global_species_data ~= nil and global_species_data.speciesName or nil
+end
 
 
 -- Returns true if a species has been selected. 

@@ -326,6 +326,10 @@ function taweet_params.init()
   -- Though params:bang("clock_tempo") is called, not params:bang(). 
   clock.add_params()
   
+  -- Configure the PSET menu to use species name when going to textentry screen
+  -- for an unnamed preset
+  psetExt.initial_name_for_unnamed_preset(species_name)
+  
   -- Load in parameters preset file if there is one.
   -- Note: don't need to call params:default() because params:read() also calls bang()
   log.print("About to read default preset...")
