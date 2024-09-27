@@ -256,10 +256,10 @@ end
 
 
 -- For shortening the label strings of parameters so that the value doesn't
--- overlap with the label. Just removing spaces after comma for a slight 
--- improvement.
+-- overlap with the label. Just removing spaces after commas & ")" and also
+-- changing remaining spaces to half spaces for a slight improvement.
 local function shortener_function(value)
-  local result = value:gsub(", ", ","):gsub("%) ", ")")
+  local result = value:gsub(", ", ","):gsub("%) ", ")"):gsub(" ", "\u{2009}")
   return result
 end  
 
