@@ -14,7 +14,7 @@ local pause_ticks = 30       -- How long to pause there
 -- on the specified image. The image is assumed to be full screen, which is
 -- 128x64.
 local function draw_filter(dark_level) 
-  log.debug("====FIXME Drawing to image using dark_level="..tostring(dark_level))
+  log.debug("Drawing to image using dark_level="..tostring(dark_level))
   
   -- Make the whole image dark
   screen.level(dark_level)  
