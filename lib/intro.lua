@@ -10,10 +10,10 @@ local rectangle_y_pause = 58 -- Where species name text rectangle should pause
 local pause_ticks = 30       -- How long to pause there
 
 
--- Draws filter. To be called via screen.draw_to() so that the drawing will occur
+-- Draws mask. To be called via screen.draw_to() so that the drawing will occur
 -- on the specified image. The image is assumed to be full screen, which is
 -- 128x64.
-local function draw_filter(dark_level) 
+local function draw_mask(dark_level) 
   log.debug("Drawing to image using dark_level="..tostring(dark_level))
   
   -- Make the whole image dark
@@ -29,28 +29,24 @@ local function draw_filter(dark_level)
   screen.fill()
   screen.circle(96, y, r)
   screen.fill()
-  
-  screen.current_point() -- FIXME Trying to sync things
-  
-  screen.save() -- FIXME Trying to sync things
 end
 
 
-local filter_cache = nil
+local mask_cache = nil
 
--- Creates and returns an image that can serve as a filter for displaying only a
+-- Creates and returns an image that can serve as a mask for displaying only a
 -- select part of the screen and everything else will be drawn at maximum of the 
 -- dark_level. By using different dark levels the background can be faded in slowly.
-local function create_filter_image(dark_level)
-  if filter_cache ~= nil then return filter_cache end
+local function create_mask_image(dark_level)
+  if mask_cache ~= nil then return mask_cache end
   
   -- Create new image
   local image = screen.create_image(screen_width, screen_height)
   
-  -- Draw filter to the image using draw_filter()
-  screen.draw_to(image, draw_filter, dark_level)
+  -- Draw mask to the image using draw_mask()
+  screen.draw_to(image, draw_mask, dark_level)
   
-  filter_cache = image
+  mask_cache = image
   
   return image
 end
@@ -123,11 +119,10 @@ local function swirling_intro_callback(current_count)
   x, y = get_x_y(current_count, 90.0)
   screen.display_image_region(image_buffer, image_width-width, 0, width, height, x, y-height)
 
-  -- Draw the filterr so that it hopefully looks as if looking through binoculars
-  local filter = create_filter_image(0)
-  screen.blend_mode("Darken") -- FIXME
-  screen.current_point() -- FIXME possibly needed since display_image() is not a queued event so might happen before the other stuff is actually written to the screen
-  screen.display_image(filter, 0, 0)
+  -- Draw the maskr so that it hopefully looks as if looking through binoculars
+  local mask = create_mask_image(0)
+  screen.blend_mode("Darken")
+  screen.display_image(mask, 0, 0)
   screen.blend_mode("Over")
   
   -- Draw some vertically moving name of the species.
@@ -257,9 +252,6 @@ end
 -- swirling_intro_callback repeatedly
 function intro_tick(count)
   swirling_intro_callback(count)
-  
-  -- Trying to collect garbage of the many image buffers created for the intro
-  -- collectgarbage() -- FIXME
 end
 
 
