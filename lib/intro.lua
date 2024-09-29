@@ -8,7 +8,7 @@ local initial_radius = 50.   -- Number of pixels animation should start from cen
 local animation_ticks = 70   -- How many ticks for the swirling animation of the image
 local rectangle_y_pause = 58 -- Where species name text rectangle should pause
 local pause_ticks = 30       -- How long to pause there
-local mask_extra_width = 20. -- extra width so can make binoculars pan a bit horizontally
+local mask_extra_width = 20  -- extra width so can make binoculars pan a bit horizontally
 
 
 -- Timer for doing intro animation. Once started, the animation intro clock runs until
@@ -116,11 +116,23 @@ local function draw_frame_of_swirling_image(current_count)
 end
 
 
--- Draw the mask so that it (hopefully) looks as if looking through binoculars
+-- Draw the binocular mask onto the screen so that it (hopefully) looks as if looking 
+-- through binoculars
 local function draw_binocular_mask(current_count)
+  -- x_offset is how far horizontally from center the binoculars should be drawn.
+  -- By using current_count to affect x_offset, the binoculars will hopefully
+  -- appear to be scanning left and right.
+  --FIXMElocal x_offset = -mask_extra_width/2 + ((current_count/4) % 10)
+  
+  -- Goes back and forth once every ticks_per_cycle ticks
+  local ticks_per_cycle = 100
+  local swing_from_center = 5 -- must be less than or equal to mask_extra_width/2
+  local x_offset = swing_from_center * math.sin(math.rad(current_count*360/ticks_per_cycle))
+  
   local mask = create_mask_image(0)
   screen.blend_mode("Darken")
-  screen.display_image_region(mask, mask_extra_width/2, 0, screen_width, screen_height, 0, 0)
+  -- display_image_region(image, left, top, width, height, x, y)
+  screen.display_image_region(mask, mask_extra_width/2 + x_offset, 0, screen_width, screen_height, 0, 0)
   screen.blend_mode("Over")
 end
 
