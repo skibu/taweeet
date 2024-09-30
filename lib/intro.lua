@@ -6,9 +6,11 @@ local screen_width = 128     -- Standard norns screen width
 local screen_height = 64     -- Standard norns screen height
 local initial_radius = 50.   -- Number of pixels animation should start from center of screen
 local animation_ticks = 70   -- How many ticks for the swirling animation of the image
+local slide_ticks = 20.      -- Number of ticks after swirling for pic to slide horizontally
 local rectangle_y_pause = 58 -- Where species name text rectangle should pause
 local pause_ticks = 30       -- How long to pause there
 local mask_extra_width = 20  -- extra width so can make binoculars pan a bit horizontally
+local initial_x_offset = 8.  -- How far to slide image horizontally after swirling completed
 
 
 -- Timer for doing intro animation. Once started, the animation intro clock runs until
@@ -91,27 +93,36 @@ local function draw_frame_of_swirling_image(current_count)
   local image_height = global_species_data.height
   local image_buffer = global_species_data.image_buffer
   
+  local x_offset = 0
+  if current_count < animation_ticks then
+    -- Still swirling so use a constant offset
+    x_offset = initial_x_offset
+  elseif current_count < animation_ticks + slide_ticks then
+    -- Slide from right to left till x_offset is 0
+    x_offset = initial_x_offset * (1 - (current_count - animation_ticks)/slide_ticks)
+  end
+  
   width = (image_width/2) * math.min(current_count, animation_ticks)/animation_ticks
   height = (image_height/2) * math.min(current_count, animation_ticks)/animation_ticks
   
   -- top left, tied to left axis
   x, y = get_x_y(current_count, 180.0)
-  screen.display_image_region (image_buffer, 0, 0, width, height, x-width, y-height)
+  screen.display_image_region (image_buffer, 0, 0, width, height, x-width+x_offset, y-height)
 
   -- bottom left, tied to down axis
   x, y = get_x_y(current_count, 270.0)
-  screen.display_image_region(image_buffer, 0, image_height-height, width, height, x-width, y)
+  screen.display_image_region(image_buffer, 0, image_height-height, width, height, x-width+x_offset, y)
 
   -- bottom right, tied to right axis
   x, y = get_x_y(current_count, 0.0)
-  screen.display_image_region(image_buffer, image_width-width, image_height-height, width, height, x, y)
+  screen.display_image_region(image_buffer, image_width-width, image_height-height, width, height, x+x_offset, y)
 
   -- top right, tied to right axis
   x, y = get_x_y(current_count, 90.0)
-  screen.display_image_region(image_buffer, image_width-width, 0, width, height, x, y-height)
+  screen.display_image_region(image_buffer, image_width-width, 0, width, height, x+x_offset, y-height)
   
   -- Return true if done with the animation
-  local done = current_count >= animation_ticks
+  local done = current_count >= animation_ticks and math.floor(x_offset + 0.5) == 0
   return done
 end
 
@@ -125,7 +136,7 @@ local function draw_binocular_mask(current_count)
   --FIXMElocal x_offset = -mask_extra_width/2 + ((current_count/4) % 10)
   
   -- Goes back and forth once every ticks_per_cycle ticks
-  local ticks_per_cycle = 100
+  local ticks_per_cycle = 50
   local swing_from_center = 5 -- must be less than or equal to mask_extra_width/2
   local x_offset = swing_from_center * math.sin(math.rad(current_count*360/ticks_per_cycle))
   
