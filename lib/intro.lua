@@ -4,13 +4,15 @@
 -- Parameters used to affect the intro animation
 local screen_width = 128     -- Standard norns screen width
 local screen_height = 64     -- Standard norns screen height
-local initial_radius = 50.   -- Number of pixels animation should start from center of screen
-local animation_ticks = 70   -- How many ticks for the swirling animation of the image
-local slide_ticks = 20.      -- Number of ticks after swirling for pic to slide horizontally
+local initial_radius = 50    -- Number of pixels swirling animation should start from center of screen
+local swirling_ticks = 60    -- How many ticks for the swirling animation of the image
+local slide_ticks = 30       -- Number of ticks after swirling for pic to slide horizontally
 local rectangle_y_pause = 58 -- Where species name text rectangle should pause
 local pause_ticks = 30       -- How long to pause there
 local mask_extra_width = 20  -- extra width so can make binoculars pan a bit horizontally
-local initial_x_offset = 8.  -- How far to slide image horizontally after swirling completed
+local initial_x_offset = 8   -- How far to slide image horizontally after swirling completed
+local start_fading_binocs_ticks = swirling_ticks + slide_ticks
+local fade_binocs_ticks = 80 -- Number of ticks to take to fade out binoculars
 
 
 -- Timer for doing intro animation. Once started, the animation intro clock runs until
@@ -22,17 +24,30 @@ local intro_clock
 -- Draws mask onto image buffer. To be called via screen.draw_to() so that the drawing
 -- will occur on the specified image. The image is assumed to be full screen, which is
 -- 128x64.
-local function draw_mask(dark_level) 
-  log.debug("Drawing mask using dark_level="..tostring(dark_level))
-  
-  -- Make the whole image dark
+local function draw_binoc_mask_on_image(dark_level) 
+  -- Draw the whole image at the dark level
   screen.level(dark_level)  
   screen.rect(0, 0, screen_width + mask_extra_width, screen_height)
   screen.fill()
   
+  -- Draw the left and right edges of mask, where won't cover the species image, 
+  -- as black since don't want them to get light when fading out the binoculars.
+  local image_width = get_species_image_width()
+  if image_width < screen_width then
+    -- Draw left black rectanble
+    screen.level(0)
+    screen.rect(0, 0, (screen_width + mask_extra_width - image_width)/2, screen_height)
+    screen.fill()
+    
+    -- Draw right black rectanble
+    screen.rect(screen_width + mask_extra_width - (screen_width + mask_extra_width - image_width)/2, 0, 
+      (screen_width - image_width)/2, screen_height)
+    screen.fill()
+  end
+  
   -- Draw two level 15 circles to make it sort of look like a view through binoculars
   screen.level(15)
-  local r = (screen_height / 2) - 4
+  local r = (screen_height / 2) - 6
   local y = screen_height / 2
   screen.circle(screen_width/4 + mask_extra_width/2, y, r)
   screen.fill()
@@ -41,23 +56,63 @@ local function draw_mask(dark_level)
 end
 
 
-local mask_cache = nil
-
 -- Creates and returns an image that can serve as a mask for displaying only a
 -- select part of the screen and everything else will be drawn at maximum of the 
 -- dark_level. By using different dark levels the background can be faded in slowly.
-local function create_mask_image(dark_level)
-  if mask_cache ~= nil then return mask_cache end
-  
+local function create_binoc_mask_image(dark_level)
   -- Create new image
   local image = screen.create_image(screen_width + mask_extra_width, screen_height)
   
-  -- Draw mask to the image buffer using draw_mask()
-  screen.draw_to(image, draw_mask, dark_level)
-  
-  mask_cache = image
+  -- Draw mask to the image buffer using draw_binoc_mask_on_image()
+  screen.draw_to(image, draw_binoc_mask_on_image, dark_level)
   
   return image
+end
+
+
+local done_with_swishing_binocs = false
+
+-- Draw the binocular mask onto the screen so that it (hopefully) looks as if looking 
+-- through binoculars. The binoculars swing back and forth by swing_from_center
+-- and based on the current_count
+local function draw_binocular_mask(current_count)
+  -- x_offset is how far horizontally from center the binoculars should be drawn.
+  -- By using current_count to affect x_offset, the binoculars will hopefully
+  -- appear to be scanning left and right.
+  if current_count == 1 then done_with_swishing_binocs = false end
+  local ticks_per_cycle = 50
+  local swing_from_center = 5 -- must be less than or equal to mask_extra_width/2
+  local x_offset = 0
+  if not done_with_swishing_binocs then
+    x_offset = swing_from_center * math.sin(math.rad(current_count*360/ticks_per_cycle))
+    if math.floor(x_offset + 0.5) == 0 and current_count >= start_fading_binocs_ticks then
+      done_with_swishing_binocs = true
+    end
+  end
+  
+  -- Determine the dark level for the mask. Using a dark level of 0 masks using black. 
+  -- If dark level is 15 or greater then there is no need to draw a mask so return true.
+  local dark_level = current_count < start_fading_binocs_ticks and 0 
+                      or 15 * (current_count - start_fading_binocs_ticks) / fade_binocs_ticks 
+  dark_level = math.floor(dark_level + 0.5) -- levels usually need to be integers
+  if dark_level >= 15 then return true end
+
+  -- Create the binocular mask. And use "darken" blend mode so that white parts of mask indicate
+  -- what can be seen of image, and dark parts will be dark.
+  local mask = create_binoc_mask_image(dark_level)
+  screen.blend_mode("darken")
+
+  -- Overlay the mask so species image will be seen through binoculars
+  -- the params are display_image_region(image, left, top, width, height, x, y)
+  screen.display_image_region(mask, 
+    mask_extra_width/2 + x_offset, 0, screen_width, screen_height, 
+    0, 0)
+  
+  -- Restore to default mode
+  screen.blend_mode("default")
+
+  -- Return false to indicate not done with binocular animation. They haven't been fully faded out yet.
+  return false 
 end
 
 
@@ -69,18 +124,18 @@ end
 -- returned is for screen coordinates where, confusingly, y increases going downwards.
 local function get_x_y(current_count, offset_degrees)
   -- If done with animation then just return center of screen
-  if current_count > animation_ticks then
+  if current_count > swirling_ticks then
     return screen_width/2, screen_height/2
   end
   
   -- Decreasing radius and increasing angle
-  radius = initial_radius * (1 - current_count/animation_ticks)
-  angle_degrees = offset_degrees + (current_count / (animation_ticks/2)) * 360
+  radius = initial_radius * (1 - current_count/swirling_ticks)
+  angle_degrees = offset_degrees + (current_count / (swirling_ticks/2)) * 360
   angle_rads = math.rad(angle_degrees)
   
   -- For the axis vector (x, y, -x, -y) determinined by offset_degrees
-  x = screen_width/2 + radius * math.cos(angle_rads)
-  y = screen_height/2 - radius * math.sin(angle_rads)
+  x = screen_width/2 + radius * math.sin(angle_rads)
+  y = screen_height/2 - radius * math.cos(angle_rads)
   
   return x, y
 end
@@ -89,25 +144,25 @@ end
 -- Draw current frame of species image swirling around.
 -- Returns true when done with animation.
 local function draw_frame_of_swirling_image(current_count)
-  local image_width = global_species_data.width
-  local image_height = global_species_data.height
-  local image_buffer = global_species_data.image_buffer
+  local image_width = get_species_image_width()
+  local image_height = get_species_image_height()
+  local image_buffer = get_species_image_buffer()
   
   local x_offset = 0
-  if current_count < animation_ticks then
+  if current_count < swirling_ticks then
     -- Still swirling so use a constant offset
     x_offset = initial_x_offset
-  elseif current_count < animation_ticks + slide_ticks then
+  elseif current_count < swirling_ticks + slide_ticks then
     -- Slide from right to left till x_offset is 0
-    x_offset = initial_x_offset * (1 - (current_count - animation_ticks)/slide_ticks)
+    x_offset = initial_x_offset * (1 - (current_count - swirling_ticks)/slide_ticks)
   end
   
-  width = (image_width/2) * math.min(current_count, animation_ticks)/animation_ticks
-  height = (image_height/2) * math.min(current_count, animation_ticks)/animation_ticks
+  width = (image_width/2) * math.min(current_count, swirling_ticks)/swirling_ticks
+  height = (image_height/2) * math.min(current_count, swirling_ticks)/swirling_ticks
   
   -- top left, tied to left axis
   x, y = get_x_y(current_count, 180.0)
-  screen.display_image_region (image_buffer, 0, 0, width, height, x-width+x_offset, y-height)
+  screen.display_image_region(image_buffer, 0, 0, width, height, x-width+x_offset, y-height)
 
   -- bottom left, tied to down axis
   x, y = get_x_y(current_count, 270.0)
@@ -122,29 +177,8 @@ local function draw_frame_of_swirling_image(current_count)
   screen.display_image_region(image_buffer, image_width-width, 0, width, height, x+x_offset, y-height)
   
   -- Return true if done with the animation
-  local done = current_count >= animation_ticks and math.floor(x_offset + 0.5) == 0
+  local done = current_count >= swirling_ticks and math.floor(x_offset + 0.5) == 0
   return done
-end
-
-
--- Draw the binocular mask onto the screen so that it (hopefully) looks as if looking 
--- through binoculars
-local function draw_binocular_mask(current_count)
-  -- x_offset is how far horizontally from center the binoculars should be drawn.
-  -- By using current_count to affect x_offset, the binoculars will hopefully
-  -- appear to be scanning left and right.
-  --FIXMElocal x_offset = -mask_extra_width/2 + ((current_count/4) % 10)
-  
-  -- Goes back and forth once every ticks_per_cycle ticks
-  local ticks_per_cycle = 50
-  local swing_from_center = 5 -- must be less than or equal to mask_extra_width/2
-  local x_offset = swing_from_center * math.sin(math.rad(current_count*360/ticks_per_cycle))
-  
-  local mask = create_mask_image(0)
-  screen.blend_mode("Darken")
-  -- display_image_region(image, left, top, width, height, x, y)
-  screen.display_image_region(mask, mask_extra_width/2 + x_offset, 0, screen_width, screen_height, 0, 0)
-  screen.blend_mode("Over")
 end
 
 
@@ -160,7 +194,7 @@ local function draw_vertically_moving_species_name(current_count)
   repeat  
     font_size = font_size - 1
     screen.font_size(font_size)
-    text_width = screen.text_extents(species_name())
+    text_width = screen.text_extents(get_species_name())
   until (text_width <= 128)
   
   -- rectangle_x is static and easy to determine
@@ -183,7 +217,7 @@ local function draw_vertically_moving_species_name(current_count)
   screen.level(15)
   screen.aa(1) -- Found that font 7 Roboto-Bold at large size looks better with anti-aliasing
   screen.move(rectangle_x + horiz_padding, rectangle_y - 2 + font_size)
-  screen.text(species_name())
+  screen.text(get_species_name())
   
   -- Return true if done with species name animation, when it has dropped below the screen
   local done = rectangle_y > screen_height
@@ -210,7 +244,7 @@ local function swirling_intro_callback(current_count)
   local done_with_animation = draw_frame_of_swirling_image(current_count)
   
   -- Draw the mask so that it (hopefully) looks as if looking through binoculars
-  draw_binocular_mask(current_count)
+  local done_with_binoculars = draw_binocular_mask(current_count)
   
   -- Draw vertically moving name of the species.
   local done_with_species_name = draw_vertically_moving_species_name(current_count)
@@ -219,9 +253,12 @@ local function swirling_intro_callback(current_count)
   screen.update()
   
   -- Done if text rectangle disappeared and done with image animation
-  if done_with_species_name and done_with_animation and intro_clock ~= nil then
+  if done_with_species_name and 
+      done_with_animation and 
+      done_with_binoculars and 
+      intro_clock ~= nil then
     log.debug("Stopping intro clock because done with all intro animation. current_count="..
-      current_count.." and animation_ticks="..animation_ticks)
+      current_count.." and swirling_ticks="..swirling_ticks)
     intro_clock:stop()
   end
 end

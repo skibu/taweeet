@@ -6,14 +6,32 @@ global_species_data = nil
 
 
 -- Returns currently selected species name, or nil if no species selected
-function species_name()
+function get_species_name()
   return global_species_data ~= nil and global_species_data.speciesName or nil
 end
 
 
 -- Returns true if a species has been selected. 
-function species_selected()
+function get_species_selected()
   return global_species_data ~= nil
+end
+
+
+-- Returns image width of the current species image, or nil if no species selected
+function get_species_image_width() 
+  return global_species_data ~= nil and global_species_data.width or nil
+end
+
+
+-- Returns image height of the current species image, or nil if no species selected
+function get_species_image_height() 
+  return global_species_data ~= nil and global_species_data.height or nil
+end
+
+
+-- Returns image buffer of the current species image, or nil if no species selected
+function get_species_image_buffer() 
+  return global_species_data ~= nil and global_species_data.image_buffer or nil
 end
 
 
