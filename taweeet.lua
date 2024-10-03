@@ -20,6 +20,8 @@ include "lib/cache"
 include "lib/softcutUtil"
 taweet_params = include "lib/parameters"
 
+clip_audio = include "lib/clipAudio"
+
 
 -- So can play a simple sound
 --engine.name = "TestSine"
@@ -43,6 +45,12 @@ end
 
 
 function redraw()
+  -- If in clip audio mode then use it's redraw function
+  if clip_audio.enabled() then
+    clip_audio.redraw()
+    return
+  end
+  
   -- Display splash screen, and do so for min of 1.0 seconds. If did indeed
   -- display splash screen then don't need to continue to display image of
   -- current species.
@@ -54,6 +62,12 @@ end
   
 
 function key(n, down)
+  -- If in clip audio mode then use clip_adui.key() to handle key press
+  if clip_audio.enabled() then
+    clip_audio.key(n, down)
+    return
+  end
+  
   if n == 1 and down == 0 then
     -- Need to halt intro if it is running. Otherwise the intro 
     -- clock could cause the the into to overwrite the menu screen.
@@ -101,6 +115,15 @@ end
 
 function enc(n, delta)
   log.debug("Taweeet encoder changed n=" .. n .. " delta=" .. delta)
+  
+  -- Enable clip_audio mode if encoder 2 or 3 are turned, and haven't done so yet
+  if n ~= 1 and not clip_audio.enabled() then
+    clip_audio.enable()
+  end
+  
+  -- If in clip_aduio mode then pass encoder to it
+  if n ~= 1 and clip_audio.enabled() then
+    clip_audio.enc(n, delta)
+    return
+  end
 end
-
-
