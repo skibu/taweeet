@@ -291,16 +291,22 @@ function taweet_params.init()
   
   -- Species selector. Since group not yet selected, cannot set the species list 
   -- for the group yet. Therefore just using empty list for now.
-  -- Using "Type" instead of "Species" because it is skinnier, living more room for values
+  -- Using "Type" instead of "Species" because it is skinnier, living more room for values.
   params:add_option("species"," \u{2009}Type:", {})
   params:set_action(params.lookup["species"], changing_species_callback)
   
-  -- Image selector. Since don't yet know the species, have to set it to empty list for now
-  params:add_option("images","Image:", {})
+  -- Image selector. Since don't yet know the species, have to set it to empty 
+  -- list for now. Setting default to 0 instead of default of 1 so that when
+  -- preset (PSET) is loaded that the thing changed callback will be called 
+  -- even if it is item 1 in the option list
+  params:add_option("images","Image:", {}, 0)
   params:set_action(params.lookup["images"], image_changed_callback)
   
-  -- Audio selector. Since don't yet know the species, have to set it to empty list for now
-  params:add_option("audio","\u{2009}\u{200A}Audio:", {})
+  -- Audio selector. Since don't yet know the species, have to set it to empty 
+  -- list for now. Setting default to 0 instead of default of 1 so that when
+  -- preset (PSET) is loaded that the thing changed callback will be called 
+  -- even if it is item 1 in the option list
+  params:add_option("audio","\u{2009}\u{200A}Audio:", {}, 0)
   params:set_action(params.lookup["audio"], audio_changed_callback)
   
   -- Adding some other params just to play around
