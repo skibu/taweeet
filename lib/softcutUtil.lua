@@ -65,7 +65,8 @@ function softcut_setup_voices_stereo(voice_index_l, voice_index_r, length)
 end
 
 
--- Loads left channel of wav file into a buffer.
+-- Loads left channel of wav file into a softcut buffer.
+-- @return table with index of buffer, filename, and length of the wavfile in seconds
 local function softcut_load_file_mono(filename, buffer_index)
   log.debug("Loading into mono buffer ".. buffer_index .. " wav file="..filename)
   
