@@ -35,6 +35,12 @@ function get_species_image_buffer()
 end
 
 
+-- Returns the filename of the wav file currently selected
+function get_species_wav_filename()
+  return global_species_data ~= nil and global_species_data.wav_filename or nil
+end
+
+
 -- Called once wav file is ready
 local function wav_file_exists_callback(filename)
   -- If the global_species_data.wav_filename has been changed it means that
@@ -42,7 +48,7 @@ local function wav_file_exists_callback(filename)
   -- anything here since it will be done by the callback for the new filename.
   if filename ~= global_species_data.wav_filename then return end
 
-  -- Play the wav file
+  -- Play the wav file in a loop
   softcut_setup_stereo(filename, 1, 2)
 end
 
