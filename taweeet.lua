@@ -44,10 +44,36 @@ function init()
 end
 
 
+local graph_y_pos = 18
+
+-- Draws the custom audio graph 
+function draw_audio_graph()
+  screen.clear()
+  
+  -- Draw custom part of the audio graph screen towards the top
+  screen.move(2, graph_y_pos-2)
+  screen.level(screen.levels.HIGHLIGHT)
+  screen.font_face(6)
+  screen.font_size(16)
+  screen.aa(1) -- Since font size 12 or greater
+  screen.text("Custom UI")
+  
+  screen.line_width(1)
+  screen.move(5, graph_y_pos-0.5)
+  screen.line (123, graph_y_pos-0.5)
+  screen.stroke()
+  
+  -- Draw the actual audio graph, which will go below graph_y_pos
+  clip_audio.draw_audio_graph()
+  
+  screen.update()
+end
+
+
 function redraw()
-  -- If in clip audio mode then use it's redraw function
+  -- If in clip audio mode then display custom audio clip screen
   if clip_audio.enabled() then
-    clip_audio.redraw()
+    draw_audio_graph()
     return
   end
   
@@ -114,14 +140,18 @@ end
 
 
 function enc(n, delta)
-  log.debug("Taweeet encoder changed n=" .. n .. " delta=" .. delta)
+  --log.debug("Taweeet encoder changed n=" .. n .. " delta=" .. delta)
   
-  -- Enable clip_audio mode if encoder 2 or 3 are turned, and haven't done so yet
+  -- Enable clip_audio mode if encoder 2 or 3 are turned, and currently not enabled
   if n ~= 1 and not clip_audio.enabled() then
-    clip_audio.enable()
+    -- Make sure not in intro anymore
+    haltIntro()
+    
+    local duration = clip_audio.wav_file_duration(get_species_wav_filename())
+    clip_audio.enable(graph_y_pos, duration)
   end
   
-  -- If in clip_aduio mode then pass encoder to it
+  -- If in clip_audio mode then pass encoder update to it
   if n ~= 1 and clip_audio.enabled() then
     clip_audio.enc(n, delta)
     return
