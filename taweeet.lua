@@ -29,7 +29,7 @@ clip_audio = include "lib/clipAudio"
 
 function init()
   -- While developing code enable log.debugging
-  log.enable_debug(true)
+  log.enable_debug(false)
 
   -- Display splash screen as soon as possible during startup
   display_splash_screen()
@@ -150,8 +150,13 @@ function enc(n, delta)
     -- Make sure not in intro anymore
     haltIntro()
     
+    -- Switch to the audio clip screen
     local duration = clip_audio.wav_file_duration(get_species_wav_filename())
     clip_audio.enable(graph_y_pos, duration)
+    
+    -- Don't want the initial encoder turn to acctually change values
+    -- so simply return
+    return
   end
   
   -- If in clip_audio mode then pass encoder update to it
