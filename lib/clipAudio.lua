@@ -9,7 +9,7 @@ local ClipAudio = {
   data_v2 = nil,
   voice_duration = nil,
   loop_begin,
-  loop_duration,
+  loop_end,
   graph_y_pos = nil
 }
 
@@ -20,7 +20,7 @@ local WIDTH = 100
 local function draw_audio_channel(channel_data, up)
   local LEVEL_MIN = 5  -- screen level for smallest amplitude 
   local LEVEL_MAX = 11 -- screen level for largest amplitude
-  local duration_per_pixel = ClipAudio.loop_duration / WIDTH
+  local duration_per_pixel = (ClipAudio.loop_end - ClipAudio.loop_begin) / WIDTH
   local y_height_per_channel = math.floor((screen.HEIGHT - ClipAudio.graph_y_pos) / 2)
   local up_or_down = up and -1 or 1
   screen.line_width(1)
@@ -138,14 +138,14 @@ function ClipAudio.draw_audio_graph()
   screen.font_face(1)
   screen.font_size(8)
   screen.aa(0)
-  screen.text_center(string.format("<- %.2fs ->", ClipAudio.loop_duration))
+  screen.text_center(string.format("<- %.2fs ->", ClipAudio.loop_end - ClipAudio.loop_begin))
   
   -- Display loop begin time in lower left corner
   screen.text_rotate (LEFT-2, screen.HEIGHT, string.format("%.2fs", ClipAudio.loop_begin), -90)
 
   -- Display loop end time in lower right corner
   screen.text_rotate (LEFT + WIDTH + 7, screen.HEIGHT, 
-    string.format("%.2fs", ClipAudio.loop_begin+ ClipAudio.loop_duration), -90)
+    string.format("%.2fs", ClipAudio.loop_end), -90)
   
   -- Add help info to bottom
   screen.move(screen.WIDTH/2, screen.HEIGHT-2)
@@ -288,8 +288,8 @@ function ClipAudio.enable(graph_y_pos, voice_duration, loop_begin, loop_duration
   ClipAudio.graph_y_pos = graph_y_pos
   ClipAudio.voice_duration = voice_duration
   ClipAudio.loop_begin = loop_begin ~= nil and loop_begin or 0
-  ClipAudio.loop_duration = loop_duration ~= nil and loop_duration 
-                                                  or (voice_duration - ClipAudio.loop_begin)
+  ClipAudio.loop_end = loop_duration ~= nil and (ClipAudio.loop_begin + loop_duration)
+                                             or (voice_duration - ClipAudio.loop_begin)
   
   -- Get the raw data from softcut buffer
   ClipAudio.initiate_audio_data_processing(voice_duration)
@@ -322,7 +322,7 @@ end
 local k3_down = false
 
 local function encoder_increment()
-  return k3_down and 0.05 or 0.5
+  return k3_down and 0.02 or 0.2
 end
 
 
@@ -352,18 +352,25 @@ function ClipAudio.enc(n, delta)
       0, ClipAudio.voice_duration - MIN_LOOP_DURATION)
     log.debug("ClipAudio.loop_begin=" .. string.format("%.2f", ClipAudio.loop_begin))
     
-    -- Make sure the loop_duration is still valid
-    if ClipAudio.loop_begin + ClipAudio.loop_duration > ClipAudio.voice_duration then
-      ClipAudio.loop_duration = ClipAudio.voice_duration - ClipAudio.loop_begin
+    -- Make sure the loop_end is still valid
+    if ClipAudio.loop_end < ClipAudio.loop_begin + MIN_LOOP_DURATION then
+      ClipAudio.loop_end = ClipAudio.loop_begin + MIN_LOOP_DURATION
+      log.debug("Also adjusted ClipAudio.loop_end=" .. string.format("%.2f", ClipAudio.loop_end))
     end
     
     redraw()
   elseif n ==3 then
-    -- encoder 3 turned so adjust loop duration
-    ClipAudio.loop_duration = util.clamp(ClipAudio.loop_duration + encoder_increment() * delta, 
-      MIN_LOOP_DURATION, ClipAudio.voice_duration - ClipAudio.loop_begin)
-    
-    log.debug("ClipAudio.loop_duration=" .. string.format("%.2f", ClipAudio.loop_duration))
+    -- encoder 3 turned so adjust loop end
+    ClipAudio.loop_end = util.clamp(ClipAudio.loop_end + encoder_increment() * delta, 
+      MIN_LOOP_DURATION, ClipAudio.voice_duration)
+    log.debug("ClipAudio.loop_end=" .. string.format("%.2f", ClipAudio.loop_end))
+
+    -- Make sure the loop_begin is still valid
+    if ClipAudio.loop_begin > ClipAudio.loop_end - MIN_LOOP_DURATION then
+      ClipAudio.loop_begin = ClipAudio.loop_end - MIN_LOOP_DURATION
+      log.debug("Also adjusted ClipAudio.loop_begin=" .. string.format("%.2f", ClipAudio.loop_begin))
+    end
+
     redraw()
   end
 end
