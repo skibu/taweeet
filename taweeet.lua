@@ -20,7 +20,7 @@ include "lib/cache"
 include "lib/softcutUtil"
 taweet_params = include "lib/parameters"
 
-audio_clip = include "lib/audioClip"
+audio_clip = require "taweeet/lib/audioClip"
 
 
 -- So can play a simple sound
@@ -29,7 +29,7 @@ audio_clip = include "lib/audioClip"
 
 function init()
   -- While developing code enable log.debugging
-  log.enable_debug(false)
+  log.enable_debug(true)
 
   -- Display splash screen as soon as possible during startup
   display_splash_screen()
@@ -150,9 +150,9 @@ function enc(n, delta)
     -- Make sure not in intro anymore
     haltIntro()
     
-    -- Switch to the audio clip screen
+    -- Switch to the audio clip screen. Use voices 1 & 2 from softcut
     local duration = audio_clip.wav_file_duration(get_species_wav_filename())
-    audio_clip.enable(graph_y_pos, duration)
+    audio_clip.enable(1, 2, duration, graph_y_pos)
     
     -- Don't want the initial encoder turn to acctually change values
     -- so simply return

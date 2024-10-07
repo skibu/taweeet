@@ -4,21 +4,52 @@
 
 
 local AudioClip = {
-  is_enabled = false,
-  softcut_voices = {1, 2}, -- which softcut voice channels to use when sampling the audio data
-  data_v1 = nil, -- data = {start, duration, sec_per_sample, samples, normalized_samples, largest_sample}
-  data_v2 = nil,
+  -- Set via enable()
+  is_enabled = false,  
+  -- Which softcut voice channels to use when sampling the audio data . Set via enable()
+  softcut_voices = {}, 
+  -- Length of voices in softcut. Set via enable()
   voice_duration = nil,
-  loop_begin,
-  loop_end,
+  -- How much space to reserve above the audio clip display. Set via enable()
   graph_y_pos = nil,
-  MIN_LOOP_DURATION = 0.05,
-  LEFT_PX = 14,   -- defines where in pixels the audio display starts
-  WIDTH_PX = 100, -- defines width in pixels of the audioi display
-  LEVEL_MIN = 5,  -- screen level for smallest amplitude 
-  LEVEL_MAX = 11  -- screen level for largest amplitude
+  -- Begin time of the loop.  Set via enable() and modified via encoders
+  loop_begin,
+  -- End time of the loop.  Set via enable() and modified via encoders
+  loop_end,
+  -- voice1 data = {start, duration, sec_per_sample, samples, normalized_samples, largest_sample}
+  data_v1 = nil,
+  -- voice2 data = {start, duration, sec_per_sample, samples, normalized_samples, largest_sample}
+  data_v2 = nil,
+  
+  -- Following are values that can be changed by a scrip, though the default values will generally be finet
+  
+  -- Minimum length in seconds of the audio loop
+  MIN_LOOP_DURATION,
+  -- defines where in pixels the audio display starts
+  LEFT_PX,
+  -- defines width in pixels of the audioi display
+  WIDTH_PX,
+  -- screen level for smallest amplitude 
+  LEVEL_MIN,
+  -- screen level for largest amplitude
+  LEVEL_MAX
 }
 
+-- At startup of script, using the pre-init hook, the values in AudioClip will be set to 
+-- these defaults. This way if a script changes the values, which is completely legit, 
+-- when the next script is run the values in AudioClip will be reset to these values.
+local default_values = {
+  -- Minimum length in seconds of the audio loop
+  MIN_LOOP_DURATION = 0.05,
+  -- defines where in pixels the audio display starts
+  LEFT_PX = 14,
+  -- defines width in pixels of the audioi display
+  WIDTH_PX = 100,
+  -- screen level for smallest amplitude
+  LEVEL_MIN = 5,
+  -- screen level for largest amplitude
+  LEVEL_MAX = 11
+}
 
 local function draw_audio_channel(channel_data, up)
   local duration_per_pixel = (AudioClip.loop_end - AudioClip.loop_begin) / AudioClip.WIDTH_PX
@@ -314,16 +345,19 @@ end
 
 
 --- Used to setup audio clip screen and switch to it.
--- @tparam number graph_y_pos y pixel value, below which can be used for displaying audio
+-- @tparam number voice1 which voice in softcut to use
+-- @tparam number voice2 second voice in softcut to use. Can be set to nil.
 -- @tparam number voice_duration length of the voice in seconds
+-- @tparam number graph_y_pos y pixel value, below which can be used for displaying audio
 -- @tparam number loop_begin Where in voice the loop begin is. If nil then will use beginning of voice
 -- @tparam number loop_duration Where in voice the loop ends. If nil then will use end of voice
-function AudioClip.enable(graph_y_pos, voice_duration, loop_begin, loop_duration)
+function AudioClip.enable(voice1, voice2, voice_duration, graph_y_pos, loop_begin, loop_duration)
   log.debug("In AudioClip.enable() and graph_y_pos="..tostring(graph_y_pos)..
     " voice_duration="..tostring(voice_duration))
   
   -- Keep track of params
   AudioClip.is_enabled = true
+  AudioClip.softcut_voices = {voice1, voice2}
   AudioClip.graph_y_pos = graph_y_pos
   AudioClip.voice_duration = voice_duration
   AudioClip.loop_begin = loop_begin ~= nil and loop_begin or 0
@@ -422,5 +456,20 @@ function AudioClip.enc(n, delta)
     redraw()
   end
 end
+
+
+-- Use pre-init hook to initialize parameters within AudioClip. This way, if a script changes
+-- the parameters then they will be reset to their default values before the script uses the
+-- values.
+local function initialize_audio_clip()
+  for i, v in pairs(default_values) do
+    AudioClip[i] = v
+  end
+end
+
+
+local hooks = require 'core/hook'
+hooks["script_pre_init"]:register("Pre init hook for audioClip to initialize values", 
+  initialize_audio_clip)
 
 return AudioClip
