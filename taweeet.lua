@@ -20,8 +20,6 @@ include "lib/cache"
 include "lib/softcutUtil"
 taweet_params = include "lib/parameters"
 
-audio_clip = require "taweeet/lib/audioClip"
-
 
 -- So can play a simple sound
 --engine.name = "TestSine"
