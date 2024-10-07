@@ -26,45 +26,60 @@ local function draw_audio_channel(channel_data, up)
   screen.line_width(1)
   screen.aa(0)
   
-  -- FIXME draw a little line at y
-  if false then
-    local y_for_test_line = screen.HEIGHT - y_height_per_channel
-    screen.level(5)
-    screen.move(0, y_for_test_line)
-    screen.line(LEFT-1, y_for_test_line)
-    screen.stroke()
-    
-    screen.move(1, y_for_test_line+2)
-    screen.line(LEFT-1, y_for_test_line+2)
-    screen.stroke()
-  end
+  log.debug("+++ In draw_audio_channel() and duration_per_pixel="..duration_per_pixel..
+    " up_or_down="..up_or_down.." y_height_per_channel="..y_height_per_channel)
   
-  log.print("+++ In draw_audio_channel() and duration_per_pixel="..duration_per_pixel.." up_or_down="..up_or_down.." y_height_per_channel="..y_height_per_channel)
-  
-  -- For each vertical line (which corresponds to a time range)
-  for line_x_cnt = 1, WIDTH do
+  -- For each vertical line (which corresponds to a time range). But start all the way 
+  -- left and go all the way right in order to show the audio graph for where it is 
+  -- beyond the loop and therefore not active. For these inactive parts the line_x_cnt
+  -- will be less than 1 or greater than WIDTH.
+  for line_x_cnt = 1-LEFT, screen.WIDTH-LEFT do
+    -- Determine begin and end time of what is to be drawn. Note: this can be beyond the 
+    -- limits of the active part of the loop.
     local ampl_line_end_time = ClipAudio.loop_begin + line_x_cnt*duration_per_pixel
     local ampl_line_begin_time = ampl_line_end_time - duration_per_pixel
     
-    -- Determine which samples should be included in the timeslot for the pixel
+    -- Determine which samples should be included in the timeslot for the pixel.
+    -- Note: these indixes can be before or after the active part of the voice 
+    -- data, in which case there is no audio amplitude line to draw.
     local sample_index_begin = math.floor(ampl_line_begin_time / channel_data.sec_per_sample) + 1
     local sample_index_end = math.floor(ampl_line_end_time / channel_data.sec_per_sample)
+    
+    -- If sample indexes are beyond the range of the data then cannot draw amplitude line
+    if sample_index_end < 1 then
+      log.debug("For line_x_cnt="..line_x_cnt.." there is no sample data so not drawing amplitude line")
+      goto continue
+    end
+    if sample_index_begin > #channel_data.normalized_samples then 
+      log.debug("For line_x_cnt="..line_x_cnt.." there is no sample data so finished drawing amplitude lines")
+      break 
+    end
     
     local max_amplitude = 0 -- will be between 0 and 1.0
     local number_of_samples = 0
     for sample_index = sample_index_begin, sample_index_end do
       local amplitude = channel_data.normalized_samples[sample_index]
-      if amplitude > max_amplitude then max_amplitude = amplitude end
-      number_of_samples = number_of_samples + 1
+      if amplitude ~= nil then
+        if amplitude > max_amplitude then max_amplitude = amplitude end
+        number_of_samples = number_of_samples + 1
+      else
+        --log.debug("No data for sample_index="..sample_index .. " so skipping")
+      end
     end
     
     -- Determine location of the amplitude line
     local x = LEFT + line_x_cnt
     local y = screen.HEIGHT - y_height_per_channel
     
-    -- Determine color/level for the amplitude line. The idea is to use the ability to have
-    -- different levels to highlight the larger amplitudes.
+    -- Determine color/level for the amplitude line. The idea is to use the ability to
+    -- have different levels to highlight the larger amplitudes.
     local level_for_amplitude = math.floor(LEVEL_MIN + max_amplitude * (LEVEL_MAX - LEVEL_MIN) + 0.5)
+    -- But if beyond active part of loop then draw the amplitude quite dimmly. Just want 
+    -- to show user that there is data beyond the extent of the active loop.
+    if line_x_cnt < 1 or line_x_cnt > WIDTH then
+      level_for_amplitude = 2
+    end
+    
     local length_of_line = max_amplitude * y_height_per_channel
     local length_of_line_in_pixels = math.floor(length_of_line)
     local remainder = length_of_line - length_of_line_in_pixels
@@ -107,6 +122,9 @@ local function draw_audio_channel(channel_data, up)
     -- For debugging
     --log.print("=== line_x_cnt="..line_x_cnt.." max_amplitude="..string.format("%.4f", max_amplitude).." length_of_line="..string.format("%.2f", length_of_line) .." length_of_line_in_pixels="..length_of_line_in_pixels.." number_of_samples="..number_of_samples.." level_for_amplitude="..level_for_amplitude)
     --log.print("--- x="..x.." y="..y.." end_of_line_y="..end_of_line_y.." pixel_level="..string.format("%.2f", pixel_level).." pixel_x="..tostring(pixel_x).." pixel_y="..tostring(pixel_y))
+    
+    -- Using a goto because Lua doesn't have a continue statement 
+    ::continue::
   end
 end
 
@@ -122,15 +140,19 @@ function ClipAudio.draw_audio_graph()
   -- data = {start, duration, sec_per_sample, samples}
   local d1 = ClipAudio.data_v1
   if d1 ~= nil then
-    log.debug("d1.start="..d1.start.." d1.duration="..d1.duration.." #d1.samples="..#d1.samples..
-      " d1.largest_sample="..d1.largest_sample)
+    log.debug("d1.start="..d1.start.." d1.duration="..string.format("%.2f", d1.duration).." #d1.samples="..#d1.samples..
+      " d1.largest_sample="..string.format("%.2f", d1.largest_sample))
   end
   
   local d2 = ClipAudio.data_v2
   if d2 ~= nil then
-    log.debug("d2.start="..d2.start.." d2.duration="..d2.duration.." #d2.samples="..#d2.samples..
-      " d2.largest_sample="..d2.largest_sample)
+    log.debug("d2.start="..d2.start.." d2.duration="..string.format("%.2f", d2.duration).." #d2.samples="..#d2.samples..
+      " d2.largest_sample="..string.format("%.2f", d2.largest_sample))
   end
+    
+  -- Draw each channel, if have data for them
+  if d1 ~= nil then draw_audio_channel(d1, true) end
+  if d2 ~= nil then draw_audio_channel(d2, false) end
   
   -- Display the duration at top of audio display, just below the custom display area
   screen.move(screen.WIDTH/2, ClipAudio.graph_y_pos + 6)
@@ -154,10 +176,6 @@ function ClipAudio.draw_audio_graph()
   screen.font_size(8)
   screen.aa(0)
   screen.text_center("Press Key2 to exit")
-  
-  -- Draw each channel, if have data for them
-  if d1 ~= nil then draw_audio_channel(d1, true) end
-  if d2 ~= nil then draw_audio_channel(d2, false) end
 end
 
 
@@ -322,7 +340,7 @@ end
 local k3_down = false
 
 local function encoder_increment()
-  return k3_down and 0.02 or 0.2
+  return k3_down and 0.01 or 0.2
 end
 
 
