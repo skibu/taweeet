@@ -141,8 +141,11 @@ function ClipAudio.draw_audio_graph()
   screen.text_center(string.format("<- %.2fs ->", ClipAudio.loop_duration))
   
   -- Display loop begin time in lower left corner
-  screen.move(LEFT, screen.HEIGHT)
   screen.text_rotate (LEFT-2, screen.HEIGHT, string.format("%.2fs", ClipAudio.loop_begin), -90)
+
+  -- Display loop end time in lower right corner
+  screen.text_rotate (LEFT + WIDTH + 7, screen.HEIGHT, 
+    string.format("%.2fs", ClipAudio.loop_begin+ ClipAudio.loop_duration), -90)
   
   -- Add help info to bottom
   screen.move(screen.WIDTH/2, screen.HEIGHT-2)
