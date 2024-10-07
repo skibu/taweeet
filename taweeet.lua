@@ -20,7 +20,7 @@ include "lib/cache"
 include "lib/softcutUtil"
 taweet_params = include "lib/parameters"
 
-clip_audio = include "lib/clipAudio"
+audio_clip = include "lib/audioClip"
 
 
 -- So can play a simple sound
@@ -56,7 +56,7 @@ function draw_audio_graph()
   screen.font_face(6)
   screen.font_size(12)
   screen.aa(1) -- Since font size 12 or greater
-  screen.text_center("Custom UI")
+  screen.text_center("Adjust Audio Clip")
   
   -- Draw horizontal line at bottom of the custom area
   screen.level(12) -- Use lighter line so don't get incorrect other faint line beneath it
@@ -67,7 +67,7 @@ function draw_audio_graph()
   screen.stroke()
   
   -- Draw the actual audio graph, which will go below graph_y_pos
-  clip_audio.draw_audio_graph()
+  audio_clip.draw_audio_graph()
   
   screen.update()
 end
@@ -75,7 +75,7 @@ end
 
 function redraw()
   -- If in clip audio mode then display custom audio clip screen
-  if clip_audio.enabled() then
+  if audio_clip.enabled() then
     draw_audio_graph()
     return
   end
@@ -92,8 +92,8 @@ end
 
 function key(n, down)
   -- If in clip audio mode then use clip_adui.key() to handle key press
-  if clip_audio.enabled() then
-    clip_audio.key(n, down)
+  if audio_clip.enabled() then
+    audio_clip.key(n, down)
     return
   end
   
@@ -145,23 +145,23 @@ end
 function enc(n, delta)
   --log.debug("Taweeet encoder changed n=" .. n .. " delta=" .. delta)
   
-  -- Enable clip_audio mode if encoder 2 or 3 are turned, and currently not enabled
-  if n ~= 1 and not clip_audio.enabled() then
+  -- Enable audio_clip mode if encoder 2 or 3 are turned, and currently not enabled
+  if n ~= 1 and not audio_clip.enabled() then
     -- Make sure not in intro anymore
     haltIntro()
     
     -- Switch to the audio clip screen
-    local duration = clip_audio.wav_file_duration(get_species_wav_filename())
-    clip_audio.enable(graph_y_pos, duration)
+    local duration = audio_clip.wav_file_duration(get_species_wav_filename())
+    audio_clip.enable(graph_y_pos, duration)
     
     -- Don't want the initial encoder turn to acctually change values
     -- so simply return
     return
   end
   
-  -- If in clip_audio mode then pass encoder update to it
-  if n ~= 1 and clip_audio.enabled() then
-    clip_audio.enc(n, delta)
+  -- If in audio_clip mode then pass encoder update to it
+  if n ~= 1 and audio_clip.enabled() then
+    audio_clip.enc(n, delta)
     return
   end
 end

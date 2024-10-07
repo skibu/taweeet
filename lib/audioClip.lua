@@ -3,25 +3,26 @@
 -- versus time.
 
 
-local ClipAudio = {
+local AudioClip = {
   is_enabled = false,
-  data_v1 = nil, -- where data = {start, duration, sec_per_sample, samples, normalized_samples, largest_sample}
+  softcut_voices = {1, 2}, -- which softcut voice channels to use when sampling the audio data
+  data_v1 = nil, -- data = {start, duration, sec_per_sample, samples, normalized_samples, largest_sample}
   data_v2 = nil,
   voice_duration = nil,
   loop_begin,
   loop_end,
-  graph_y_pos = nil
+  graph_y_pos = nil,
+  MIN_LOOP_DURATION = 0.05,
+  LEFT_PX = 14,   -- defines where in pixels the audio display starts
+  WIDTH_PX = 100, -- defines width in pixels of the audioi display
+  LEVEL_MIN = 5,  -- screen level for smallest amplitude 
+  LEVEL_MAX = 11  -- screen level for largest amplitude
 }
 
 
-local LEFT = 14
-local WIDTH = 100
-
 local function draw_audio_channel(channel_data, up)
-  local LEVEL_MIN = 5  -- screen level for smallest amplitude 
-  local LEVEL_MAX = 11 -- screen level for largest amplitude
-  local duration_per_pixel = (ClipAudio.loop_end - ClipAudio.loop_begin) / WIDTH
-  local y_height_per_channel = math.floor((screen.HEIGHT - ClipAudio.graph_y_pos) / 2)
+  local duration_per_pixel = (AudioClip.loop_end - AudioClip.loop_begin) / AudioClip.WIDTH_PX
+  local y_height_per_channel = math.floor((screen.HEIGHT - AudioClip.graph_y_pos) / 2)
   local up_or_down = up and -1 or 1
   screen.line_width(1)
   screen.aa(0)
@@ -32,11 +33,11 @@ local function draw_audio_channel(channel_data, up)
   -- For each vertical line (which corresponds to a time range). But start all the way 
   -- left and go all the way right in order to show the audio graph for where it is 
   -- beyond the loop and therefore not active. For these inactive parts the line_x_cnt
-  -- will be less than 1 or greater than WIDTH.
-  for line_x_cnt = 1-LEFT, screen.WIDTH-LEFT do
+  -- will be less than 1 or greater than AudioClip.WIDTH_PX.
+  for line_x_cnt = 1-AudioClip.LEFT_PX, screen.WIDTH-AudioClip.LEFT_PX do
     -- Determine begin and end time of what is to be drawn. Note: this can be beyond the 
     -- limits of the active part of the loop.
-    local ampl_line_end_time = ClipAudio.loop_begin + line_x_cnt*duration_per_pixel
+    local ampl_line_end_time = AudioClip.loop_begin + line_x_cnt*duration_per_pixel
     local ampl_line_begin_time = ampl_line_end_time - duration_per_pixel
     
     -- Determine which samples should be included in the timeslot for the pixel.
@@ -68,15 +69,16 @@ local function draw_audio_channel(channel_data, up)
     end
     
     -- Determine location of the amplitude line
-    local x = LEFT + line_x_cnt
+    local x = AudioClip.LEFT_PX + line_x_cnt
     local y = screen.HEIGHT - y_height_per_channel
     
     -- Determine color/level for the amplitude line. The idea is to use the ability to
     -- have different levels to highlight the larger amplitudes.
-    local level_for_amplitude = math.floor(LEVEL_MIN + max_amplitude * (LEVEL_MAX - LEVEL_MIN) + 0.5)
+    local level_for_amplitude = math.floor(AudioClip.LEVEL_MIN + 
+      max_amplitude * (AudioClip.LEVEL_MAX - AudioClip.LEVEL_MIN) + 0.5)
     -- But if beyond active part of loop then draw the amplitude quite dimmly. Just want 
     -- to show user that there is data beyond the extent of the active loop.
-    if line_x_cnt < 1 or line_x_cnt > WIDTH then
+    if line_x_cnt < 1 or line_x_cnt > AudioClip.WIDTH_PX then
       level_for_amplitude = 2
     end
     
@@ -112,7 +114,7 @@ local function draw_audio_channel(channel_data, up)
     -- If at beginning or end of the active audio area then draw vertical line as a y axis.
     -- The line starts just above the audio amplitude line, with a 1 pixel gap to indicate
     -- the difference.
-    if line_x_cnt == 1 or line_x_cnt == WIDTH then
+    if line_x_cnt == 1 or line_x_cnt == AudioClip.WIDTH_PX then
       screen.level(4)
       screen.move(x, end_of_line_y + 2*up_or_down)
       screen.line(x, y + up_or_down*y_height_per_channel)
@@ -129,25 +131,25 @@ local function draw_audio_channel(channel_data, up)
 end
 
 
---- Does the actual drawing of the audio clip. Separate from ClipAudio.redraw() in 
+--- Does the actual drawing of the audio clip. Separate from AudioClip.redraw() in 
 -- case script wants to create other buttons in the interface. Does not do 
 -- screen.clear() nor screen.update(). Those need to be done by the custom redraw()
 -- function that draws the other UI elements on the screen.
-function ClipAudio.draw_audio_graph()
-  log.debug("In draw_audio_graph() and ClipAudio.graph_y_pos="..ClipAudio.graph_y_pos)
+function AudioClip.draw_audio_graph()
+  log.debug("In draw_audio_graph() and AudioClip.graph_y_pos="..AudioClip.graph_y_pos)
   
   -- debugging
   -- data = {start, duration, sec_per_sample, samples}
-  local d1 = ClipAudio.data_v1
+  local d1 = AudioClip.data_v1
   if d1 ~= nil then
-    log.debug("d1.start="..d1.start.." d1.duration="..string.format("%.2f", d1.duration).." #d1.samples="..#d1.samples..
-      " d1.largest_sample="..string.format("%.2f", d1.largest_sample))
+    log.debug("d1.start="..d1.start.." d1.duration="..string.format("%.2f", d1.duration)..
+      " #d1.samples="..#d1.samples.." d1.largest_sample="..string.format("%.2f", d1.largest_sample))
   end
   
-  local d2 = ClipAudio.data_v2
+  local d2 = AudioClip.data_v2
   if d2 ~= nil then
-    log.debug("d2.start="..d2.start.." d2.duration="..string.format("%.2f", d2.duration).." #d2.samples="..#d2.samples..
-      " d2.largest_sample="..string.format("%.2f", d2.largest_sample))
+    log.debug("d2.start="..d2.start.." d2.duration="..string.format("%.2f", d2.duration)..
+      " #d2.samples="..#d2.samples.." d2.largest_sample="..string.format("%.2f", d2.largest_sample))
   end
     
   -- Draw each channel, if have data for them
@@ -155,19 +157,19 @@ function ClipAudio.draw_audio_graph()
   if d2 ~= nil then draw_audio_channel(d2, false) end
   
   -- Display the duration at top of audio display, just below the custom display area
-  screen.move(screen.WIDTH/2, ClipAudio.graph_y_pos + 6)
+  screen.move(screen.WIDTH/2, AudioClip.graph_y_pos + 6)
   screen.level(8)
   screen.font_face(1)
   screen.font_size(8)
   screen.aa(0)
-  screen.text_center(string.format("<- %.2fs ->", ClipAudio.loop_end - ClipAudio.loop_begin))
+  screen.text_center(string.format("<- %.2fs ->", AudioClip.loop_end - AudioClip.loop_begin))
   
   -- Display loop begin time in lower left corner
-  screen.text_rotate (LEFT-2, screen.HEIGHT, string.format("%.2fs", ClipAudio.loop_begin), -90)
+  screen.text_rotate (AudioClip.LEFT_PX-2, screen.HEIGHT, string.format("%.2fs", AudioClip.loop_begin), -90)
 
   -- Display loop end time in lower right corner
-  screen.text_rotate (LEFT + WIDTH + 7, screen.HEIGHT, 
-    string.format("%.2fs", ClipAudio.loop_end), -90)
+  screen.text_rotate (AudioClip.LEFT_PX + AudioClip.WIDTH_PX + 7, screen.HEIGHT, 
+    string.format("%.2fs", AudioClip.loop_end), -90)
   
   -- Add help info to bottom
   screen.move(screen.WIDTH/2, screen.HEIGHT-2)
@@ -180,7 +182,7 @@ end
 
 
 -- Returns duration of the wav file in seconds
-function ClipAudio.wav_file_duration(filename)
+function AudioClip.wav_file_duration(filename)
   -- Determine and return audio length
   local ch, samples, samplerate = audio.file_info(filename)
   local duration = samples/samplerate
@@ -228,13 +230,13 @@ local function buffer_content_processed_callback(ch, start, sec_per_sample, samp
   }
   
   if ch == 1 then
-    ClipAudio.data_v1 = data
+    AudioClip.data_v1 = data
   else
-    ClipAudio.data_v2 = data
+    AudioClip.data_v2 = data
   end
   
   -- Since have processed data should draw the audio graphs
-  ClipAudio.draw_audio_graph()
+  AudioClip.draw_audio_graph()
   screen.update()
 end
 
@@ -243,7 +245,7 @@ end
 -- buffer_content_processed_callback() is called when the data has finished
 -- being processed.
 -- @tparam number voice_duration length in seconds of the voice
-function ClipAudio.initiate_audio_data_processing(voice_duration)
+function AudioClip.initiate_audio_data_processing(voice_duration)
   log.debug("Processing audio data and voice_duration="..tostring(voice_duration))
   
   -- register callbacks that handles the resampled audio data.
@@ -265,30 +267,49 @@ function ClipAudio.initiate_audio_data_processing(voice_duration)
 end
 
 
---- Called automatically when key2 is hit by user to exit the page
-function ClipAudio.exit()
+-- Updates begin and end time of the audio loop
+local function set_audio_loop_params()
+  for _, voice in ipairs(AudioClip.softcut_voices) do
+    log.debug("Setting audio params for voice="..voice..
+      " loop_begin="..string.format("%.2f", AudioClip.loop_begin)..
+      " loop_end="..string.format("%.2f", AudioClip.loop_end))
+    
+    -- Start loop at AudioClip.loop_begin
+    softcut.loop_start(voice, AudioClip.loop_begin)
+  
+    -- Play till AudioClip.loop_end
+    softcut.loop_end(voice, AudioClip.loop_end)
+    
+    -- Enable looping in case it has not yet been enabled
+    softcut.loop(voice, 1)
+  end
+end
+
+
+--- Called when key2 is hit by user to exit the audio clip screen
+function AudioClip.exit()
   log.debug("Exiting clip audio UI")
    
   -- Stop polling of audio phase since it takes resources
   softcut.poll_stop_phase()
   
   -- Mark as disabled
-  ClipAudio.disable()
+  AudioClip.disable()
   
   -- Clear the other params
-  ClipAudio.data_v1 = nil
-  ClipAudio.data_v2 = nil
-  ClipAudio.voice_duration = nil
-  ClipAudio.graph_y_pos = nil
+  AudioClip.data_v1 = nil
+  AudioClip.data_v2 = nil
+  AudioClip.voice_duration = nil
+  AudioClip.graph_y_pos = nil
   
   -- Call the app's redraw since exiting the audio graph screen
   redraw() 
 end
 
 
-function ClipAudio.disable()
-  log.debug("In ClipAudio.disable()")
-  ClipAudio.is_enabled = false
+function AudioClip.disable()
+  log.debug("In AudioClip.disable()")
+  AudioClip.is_enabled = false
 end
 
 
@@ -297,20 +318,23 @@ end
 -- @tparam number voice_duration length of the voice in seconds
 -- @tparam number loop_begin Where in voice the loop begin is. If nil then will use beginning of voice
 -- @tparam number loop_duration Where in voice the loop ends. If nil then will use end of voice
-function ClipAudio.enable(graph_y_pos, voice_duration, loop_begin, loop_duration)
-  log.debug("In ClipAudio.enable() and graph_y_pos="..tostring(graph_y_pos)..
+function AudioClip.enable(graph_y_pos, voice_duration, loop_begin, loop_duration)
+  log.debug("In AudioClip.enable() and graph_y_pos="..tostring(graph_y_pos)..
     " voice_duration="..tostring(voice_duration))
   
   -- Keep track of params
-  ClipAudio.is_enabled = true
-  ClipAudio.graph_y_pos = graph_y_pos
-  ClipAudio.voice_duration = voice_duration
-  ClipAudio.loop_begin = loop_begin ~= nil and loop_begin or 0
-  ClipAudio.loop_end = loop_duration ~= nil and (ClipAudio.loop_begin + loop_duration)
-                                             or (voice_duration - ClipAudio.loop_begin)
+  AudioClip.is_enabled = true
+  AudioClip.graph_y_pos = graph_y_pos
+  AudioClip.voice_duration = voice_duration
+  AudioClip.loop_begin = loop_begin ~= nil and loop_begin or 0
+  AudioClip.loop_end = loop_duration ~= nil and (AudioClip.loop_begin + loop_duration)
+                                             or (voice_duration - AudioClip.loop_begin)
+  
+  -- Loop the voices using proper begin and end times
+  set_audio_loop_params()
   
   -- Get the raw data from softcut buffer
-  ClipAudio.initiate_audio_data_processing(voice_duration)
+  AudioClip.initiate_audio_data_processing(voice_duration)
     
   -- Call redraw to display the special audio clip screen
   redraw()
@@ -318,20 +342,20 @@ end
 
 
 --- Returns true if clipAudio screen is currently enabled
-function ClipAudio.enabled()
-  return ClipAudio.is_enabled ~= nil and ClipAudio.is_enabled
+function AudioClip.enabled()
+  return AudioClip.is_enabled ~= nil and AudioClip.is_enabled
 end
 
 
 --- Does full drawing of the audio clip.
 -- Includes doing screen.clear() at beginning and screen.update() at end.
 -- If want to add other UI elements then should create own redraw function
--- that does the clear(), outputs the custom UI, calls ClipAudio.draw_audio_graph(26)
+-- that does the clear(), outputs the custom UI, calls AudioClip.draw_audio_graph(26)
 -- to draw the audio graph, and then calls update().
-function ClipAudio.redraw()
-  log.debug("FIXME NOT NEEDED! In ClipAudio.redraw() and will call draw_audio_graph()")
+function AudioClip.redraw()
+  log.debug("FIXME NOT NEEDED! In AudioClip.redraw() and will call draw_audio_graph()")
   screen.clear()
-  ClipAudio.draw_audio_graph(26)
+  AudioClip.draw_audio_graph(26)
   screen.update()
 end
 
@@ -344,12 +368,15 @@ local function encoder_increment()
 end
 
 
-function ClipAudio.key(n, down)
-  log.debug("ClipAudio key pressed n=" .. n .. " delta=" .. down)
+-- Handles key presses for the audio clip screen. When k2 is hit the audio
+-- clip screen is exited. And when k3 is hit the variable k3_down is updated
+-- so that the encoders can have fine resolution.
+function AudioClip.key(n, down)
+  log.debug("AudioClip key pressed n=" .. n .. " delta=" .. down)
   
   -- If key2 hit then exit clip audio mode
   if n == 2 then
-    ClipAudio.exit()
+    AudioClip.exit()
   end
   
   -- If it is key3 then update variable k3_down
@@ -359,38 +386,41 @@ function ClipAudio.key(n, down)
 end
 
 
-local MIN_LOOP_DURATION = 0.1
-
-function ClipAudio.enc(n, delta)
-  log.debug("ClipAudio encoder changed n=" .. n .. " delta=" .. delta)
+-- Handles encoder turns for the audio clip screen. Adjusts the loop begin and end times.
+function AudioClip.enc(n, delta)
+  log.debug("AudioClip encoder changed n=" .. n .. " delta=" .. delta)
   
   if n == 2 then
     -- encoder 2 turned so adjust loop begin time
-    ClipAudio.loop_begin = util.clamp(ClipAudio.loop_begin + encoder_increment() * delta, 
-      0, ClipAudio.voice_duration - MIN_LOOP_DURATION)
-    log.debug("ClipAudio.loop_begin=" .. string.format("%.2f", ClipAudio.loop_begin))
+    AudioClip.loop_begin = util.clamp(AudioClip.loop_begin + encoder_increment() * delta, 
+      0, AudioClip.voice_duration - AudioClip.MIN_LOOP_DURATION)
+    log.debug("AudioClip.loop_begin=" .. string.format("%.2f", AudioClip.loop_begin))
     
     -- Make sure the loop_end is still valid
-    if ClipAudio.loop_end < ClipAudio.loop_begin + MIN_LOOP_DURATION then
-      ClipAudio.loop_end = ClipAudio.loop_begin + MIN_LOOP_DURATION
-      log.debug("Also adjusted ClipAudio.loop_end=" .. string.format("%.2f", ClipAudio.loop_end))
+    if AudioClip.loop_end < AudioClip.loop_begin + AudioClip.MIN_LOOP_DURATION then
+      AudioClip.loop_end = AudioClip.loop_begin + AudioClip.MIN_LOOP_DURATION
+      log.debug("Also adjusted AudioClip.loop_end=" .. string.format("%.2f", AudioClip.loop_end))
     end
+    
+    set_audio_loop_params()
     
     redraw()
   elseif n ==3 then
     -- encoder 3 turned so adjust loop end
-    ClipAudio.loop_end = util.clamp(ClipAudio.loop_end + encoder_increment() * delta, 
-      MIN_LOOP_DURATION, ClipAudio.voice_duration)
-    log.debug("ClipAudio.loop_end=" .. string.format("%.2f", ClipAudio.loop_end))
+    AudioClip.loop_end = util.clamp(AudioClip.loop_end + encoder_increment() * delta, 
+      AudioClip.MIN_LOOP_DURATION, AudioClip.voice_duration)
+    log.debug("AudioClip.loop_end=" .. string.format("%.2f", AudioClip.loop_end))
 
     -- Make sure the loop_begin is still valid
-    if ClipAudio.loop_begin > ClipAudio.loop_end - MIN_LOOP_DURATION then
-      ClipAudio.loop_begin = ClipAudio.loop_end - MIN_LOOP_DURATION
-      log.debug("Also adjusted ClipAudio.loop_begin=" .. string.format("%.2f", ClipAudio.loop_begin))
+    if AudioClip.loop_begin > AudioClip.loop_end - AudioClip.MIN_LOOP_DURATION then
+      AudioClip.loop_begin = AudioClip.loop_end - AudioClip.MIN_LOOP_DURATION
+      log.debug("Also adjusted AudioClip.loop_begin=" .. string.format("%.2f", AudioClip.loop_begin))
     end
 
+    set_audio_loop_params()
+  
     redraw()
   end
 end
 
-return ClipAudio
+return AudioClip
