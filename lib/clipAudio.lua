@@ -9,66 +9,105 @@ local ClipAudio = {
   data_v2 = nil,
   voice_duration = nil,
   loop_begin,
-  loop_end,
+  loop_duration,
   graph_y_pos = nil
 }
 
 
+local LEFT = 14
+local WIDTH = 100
+
 local function draw_audio_channel(channel_data, up)
-  local LEFT = 14
-  local WIDTH = 100
-  local LEVEL = 10 -- screen level for drawing the line
-  local duration_per_pixel = channel_data.duration / WIDTH
+  local LEVEL_MIN = 5  -- screen level for smallest amplitude 
+  local LEVEL_MAX = 11 -- screen level for largest amplitude
+  local duration_per_pixel = ClipAudio.loop_duration / WIDTH
+  local y_height_per_channel = math.floor((screen.HEIGHT - ClipAudio.graph_y_pos) / 2)
   local up_or_down = up and -1 or 1
   screen.line_width(1)
   screen.aa(0)
   
-  log.print("+++ duration_per_pixel="..duration_per_pixel.." up_or_down="..up_or_down)
+  -- FIXME draw a little line at y
+  if false then
+    local y_for_test_line = screen.HEIGHT - y_height_per_channel
+    screen.level(5)
+    screen.move(0, y_for_test_line)
+    screen.line(LEFT-1, y_for_test_line)
+    screen.stroke()
+    
+    screen.move(1, y_for_test_line+2)
+    screen.line(LEFT-1, y_for_test_line+2)
+    screen.stroke()
+  end
+  
+  log.print("+++ In draw_audio_channel() and duration_per_pixel="..duration_per_pixel.." up_or_down="..up_or_down.." y_height_per_channel="..y_height_per_channel)
   
   -- For each vertical line (which corresponds to a time range)
   for line_x_cnt = 1, WIDTH do
-    local line_end_time = line_x_cnt * duration_per_pixel
-    local line_begin_time = line_end_time - duration_per_pixel
+    local ampl_line_end_time = ClipAudio.loop_begin + line_x_cnt*duration_per_pixel
+    local ampl_line_begin_time = ampl_line_end_time - duration_per_pixel
     
-    local sample_index_begin = math.floor(line_begin_time / channel_data.sec_per_sample) + 1
-    local sample_index_end = math.floor(line_end_time / channel_data.sec_per_sample)
+    -- Determine which samples should be included in the timeslot for the pixel
+    local sample_index_begin = math.floor(ampl_line_begin_time / channel_data.sec_per_sample) + 1
+    local sample_index_end = math.floor(ampl_line_end_time / channel_data.sec_per_sample)
     
-    local summed_amplitude = 0
+    local max_amplitude = 0 -- will be between 0 and 1.0
     local number_of_samples = 0
     for sample_index = sample_index_begin, sample_index_end do
       local amplitude = channel_data.normalized_samples[sample_index]
-      summed_amplitude = summed_amplitude + amplitude
+      if amplitude > max_amplitude then max_amplitude = amplitude end
       number_of_samples = number_of_samples + 1
     end
     
-    local average_amplitude = number_of_samples > 0 and summed_amplitude / number_of_samples or 0
+    -- Determine location of the amplitude line
+    local x = LEFT + line_x_cnt
+    local y = screen.HEIGHT - y_height_per_channel
     
-    -- Draw the line. Use an x value ov .5, 1.5, 2.5 etc so that can draw line with width of just 1 pixel
-    local x = LEFT - 0.5 + line_x_cnt
-    local total_y_height = screen.HEIGHT - ClipAudio.graph_y_pos
-    local y = screen.HEIGHT - total_y_height / 2
-    screen.level(LEVEL)
-    screen.move(x, y)
-    local end_of_line_y = y + up_or_down * math.floor(average_amplitude)
-    screen.line(x, end_of_line_y)
-    screen.stroke()
+    -- Determine color/level for the amplitude line. The idea is to use the ability to have
+    -- different levels to highlight the larger amplitudes.
+    local level_for_amplitude = math.floor(LEVEL_MIN + max_amplitude * (LEVEL_MAX - LEVEL_MIN) + 0.5)
+    local length_of_line = max_amplitude * y_height_per_channel
+    local length_of_line_in_pixels = math.floor(length_of_line)
+    local remainder = length_of_line - length_of_line_in_pixels
+    local end_of_line_y = y + up_or_down*length_of_line_in_pixels
+    -- Draw max amplitude line if it is at least 1 pixel long
+    if length_of_line_in_pixels >= 1 then
+      -- Actually draw the amplitude line
+      screen.level(level_for_amplitude)
+      screen.move(x, y)
+      screen.line(x, end_of_line_y)
+      screen.stroke()
+    end
     
     -- Draw single pixel at end of line, using level to indicate how much beyond the 
     -- line it should go. The pixel should be at a level proportional to the fractional
     -- value of the average amplitude. 
-    local pixel_level = LEVEL * (average_amplitude % 1)
-    screen.level(pixel_level)
-    local pixel_x = math.floor(x+0.51)
-    local pixel_y = end_of_line_y + up_or_down + up_or_down
-    screen.pixel(pixel_x, pixel_y) 
-    screen.fill()
+    local pixel_level = level_for_amplitude * remainder
+    local pixel_x
+    local pixel_y
+    if pixel_level > 1.0 then
+      screen.level(pixel_level)
+      -- Note: for pixel() pixel_x, pixel_y are the actual pixel coordinate
+      pixel_x = x - 1
+      pixel_y = end_of_line_y
+      if up then pixel_y = pixel_y -1 end
+      screen.pixel(pixel_x, pixel_y) 
+      screen.fill()
+    end
     
-    log.print("=== line_x_cnt="..line_x_cnt.." average_amplitude="..string.format("%.2f", average_amplitude).." summed_amplitude="..string.format("%.2f", summed_amplitude).." number_of_samples="..number_of_samples)
-    log.print("    x="..x.." y="..y.." end_of_line_y="..end_of_line_y.." pixel_level="..string.format("%.2f", pixel_level).." pixel_x="..pixel_x.." pixel_y="..pixel_y)
+    -- If at beginning or end of the active audio area then draw vertical line as a y axis.
+    -- The line starts just above the audio amplitude line, with a 1 pixel gap to indicate
+    -- the difference.
+    if line_x_cnt == 1 or line_x_cnt == WIDTH then
+      screen.level(4)
+      screen.move(x, end_of_line_y + 2*up_or_down)
+      screen.line(x, y + up_or_down*y_height_per_channel)
+      screen.stroke()
+    end
+    
+    -- For debugging
+    --log.print("=== line_x_cnt="..line_x_cnt.." max_amplitude="..string.format("%.4f", max_amplitude).." length_of_line="..string.format("%.2f", length_of_line) .." length_of_line_in_pixels="..length_of_line_in_pixels.." number_of_samples="..number_of_samples.." level_for_amplitude="..level_for_amplitude)
+    --log.print("--- x="..x.." y="..y.." end_of_line_y="..end_of_line_y.." pixel_level="..string.format("%.2f", pixel_level).." pixel_x="..tostring(pixel_x).." pixel_y="..tostring(pixel_y))
   end
-  
-
-
 end
 
 
@@ -85,27 +124,25 @@ function ClipAudio.draw_audio_graph()
   if d1 ~= nil then
     log.debug("d1.start="..d1.start.." d1.duration="..d1.duration.." #d1.samples="..#d1.samples..
       " d1.largest_sample="..d1.largest_sample)
-    json.print(d1.normalized_samples)
   end
   
   local d2 = ClipAudio.data_v2
   if d2 ~= nil then
     log.debug("d2.start="..d2.start.." d2.duration="..d2.duration.." #d2.samples="..#d2.samples..
       " d2.largest_sample="..d2.largest_sample)
-    json.print(d2.normalized_samples)
   end
   
-  -- For now just draw some text as a placeholder. But this should be the audio graph.
-  screen.move(0, ClipAudio.graph_y_pos+18) 
-  screen.level(screen.levels.HIGHLIGHT)
-  screen.font_face(6)
-  screen.font_size(14)
-  screen.aa(1) -- Since font size 12 or greater
-  --screen.text("Audio Graph, soon...")
+  -- Display the duration at top of audio display, just below the custom display area
+  screen.move(screen.WIDTH/2, ClipAudio.graph_y_pos + 6)
+  screen.level(8)
+  screen.font_face(1)
+  screen.font_size(8)
+  screen.aa(0)
+  screen.text_center(string.format("<- %.2fs ->", ClipAudio.loop_duration))
   
-  -- Draw each channel, if have data for them
-  if d1 ~= nil then draw_audio_channel(d1, true) end
-  if d2 ~= nil then draw_audio_channel(d2, false) end
+  -- Display loop begin time in lower left corner
+  screen.move(LEFT, screen.HEIGHT)
+  screen.text_rotate (LEFT-2, screen.HEIGHT, string.format("%.2fs", ClipAudio.loop_begin), -90)
   
   -- Add help info to bottom
   screen.move(screen.WIDTH/2, screen.HEIGHT-2)
@@ -114,6 +151,10 @@ function ClipAudio.draw_audio_graph()
   screen.font_size(8)
   screen.aa(0)
   screen.text_center("Press Key2 to exit")
+  
+  -- Draw each channel, if have data for them
+  if d1 ~= nil then draw_audio_channel(d1, true) end
+  if d2 ~= nil then draw_audio_channel(d2, false) end
 end
 
 
@@ -189,7 +230,7 @@ function ClipAudio.initiate_audio_data_processing(voice_duration)
   softcut.event_render(buffer_content_processed_callback)
   for ch=1,2 do
     local start = 0
-    local max_samples = 6000 -- 200 samples per second for 30 second audio clip FIXME??
+    local max_samples = 200 * voice_duration -- 200 samples per second
     softcut.render_buffer(ch, start, voice_duration, max_samples)
   end
   
@@ -274,6 +315,14 @@ function ClipAudio.redraw()
 end
 
 
+-- If k3 is down then use fine resolution mode for ehcoders
+local k3_down = false
+
+local function encoder_increment()
+  return k3_down and 0.05 or 0.5
+end
+
+
 function ClipAudio.key(n, down)
   log.debug("ClipAudio key pressed n=" .. n .. " delta=" .. down)
   
@@ -281,11 +330,39 @@ function ClipAudio.key(n, down)
   if n == 2 then
     ClipAudio.exit()
   end
+  
+  -- If it is key3 then update variable k3_down
+  if n == 3 then
+    k3_down = (down == 1)
+  end
 end
 
 
+local MIN_LOOP_DURATION = 0.1
+
 function ClipAudio.enc(n, delta)
   log.debug("ClipAudio encoder changed n=" .. n .. " delta=" .. delta)
+  
+  if n == 2 then
+    -- encoder 2 turned so adjust loop begin time
+    ClipAudio.loop_begin = util.clamp(ClipAudio.loop_begin + encoder_increment() * delta, 
+      0, ClipAudio.voice_duration - MIN_LOOP_DURATION)
+    log.debug("ClipAudio.loop_begin=" .. string.format("%.2f", ClipAudio.loop_begin))
+    
+    -- Make sure the loop_duration is still valid
+    if ClipAudio.loop_begin + ClipAudio.loop_duration > ClipAudio.voice_duration then
+      ClipAudio.loop_duration = ClipAudio.voice_duration - ClipAudio.loop_begin
+    end
+    
+    redraw()
+  elseif n ==3 then
+    -- encoder 3 turned so adjust loop duration
+    ClipAudio.loop_duration = util.clamp(ClipAudio.loop_duration + encoder_increment() * delta, 
+      MIN_LOOP_DURATION, ClipAudio.voice_duration - ClipAudio.loop_begin)
+    
+    log.debug("ClipAudio.loop_duration=" .. string.format("%.2f", ClipAudio.loop_duration))
+    redraw()
+  end
 end
 
 return ClipAudio

@@ -44,23 +44,26 @@ function init()
 end
 
 
-local graph_y_pos = 18
+local graph_y_pos = 14
 
 -- Draws the custom audio graph 
 function draw_audio_graph()
   screen.clear()
   
   -- Draw custom part of the audio graph screen towards the top
-  screen.move(2, graph_y_pos-2)
+  screen.move(screen.WIDTH/2, graph_y_pos-3)
   screen.level(screen.levels.HIGHLIGHT)
   screen.font_face(6)
-  screen.font_size(16)
+  screen.font_size(12)
   screen.aa(1) -- Since font size 12 or greater
-  screen.text("Custom UI")
+  screen.text_center("Custom UI")
   
-  screen.line_width(1)
-  screen.move(5, graph_y_pos-0.5)
-  screen.line (123, graph_y_pos-0.5)
+  -- Draw horizontal line at bottom of the custom area
+  screen.level(12) -- Use lighter line so don't get incorrect other faint line beneath it
+  screen.line_width(1.0)
+  screen.aa(0)
+  screen.move(10, graph_y_pos-1)
+  screen.line (118, graph_y_pos-1)
   screen.stroke()
   
   -- Draw the actual audio graph, which will go below graph_y_pos
