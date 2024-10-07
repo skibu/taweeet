@@ -105,7 +105,7 @@ function softcut_setup_voice_mono(voice_index, buffer_index, length)
   -- Full audio level
   softcut.level(voice_index, 1.0)
 
-  -- Set to loop continuouslyl
+  -- Set to loop continuously
   softcut.loop(voice_index, 1)
 
   -- Start loop at beginning, 0.0 seconds
