@@ -140,6 +140,14 @@ function key(n, down)
 end
 
 
+-- Called when audio_clip screen is exited and the loop begin and end times
+-- might have changed. Updates the parameters accordingly
+local function loop_begin_end_times_callback(loop_begin_time, loop_end_time)
+  params:set("loop_begin_time", loop_begin_time, true) -- silent
+  params:set("loop_end_time", loop_end_time, true) -- silent
+end
+
+
 function enc(n, delta)
   --log.debug("Taweeet encoder changed n=" .. n .. " delta=" .. delta)
   
@@ -150,7 +158,9 @@ function enc(n, delta)
     
     -- Switch to the audio clip screen. Use voices 1 & 2 from softcut
     local duration = audio_clip.wav_file_duration(get_species_wav_filename())
-    audio_clip.enable(1, 2, duration, graph_y_pos)
+    local loop_begin = params:get("loop_begin_time")
+    local loop_end = params:get("loop_end_time")
+    audio_clip.enable(1, 2, duration, graph_y_pos, loop_begin, loop_end, loop_begin_end_times_callback)
     
     -- Don't want the initial encoder turn to acctually change values
     -- so simply return

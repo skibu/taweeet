@@ -255,6 +255,26 @@ function taweet_params.update_options_for_new_species(species_data)
 end
 
 
+-- Called when in parameter menu and encoder used to change the begin time of the audio loop
+local function loop_begin_time_changed_callback(loop_begin_time)
+  log.debug("begin time changed to ".. loop_begin_time .." sec")
+  sofcut_setup_clip(1, 2, loop_begin_time, nil)
+  
+  -- Update limit for the end time parameter
+  params:lookup_param("loop_end_time").min = loop_begin_time + audio_clip.MIN_LOOP_DURATION
+end
+
+
+-- Called when in parameter menu and encoder used to change the end time of the audio loop
+local function loop_end_time_changed_callback(loop_end_time)
+  log.debug("end time changed to ".. loop_end_time .." sec")
+  sofcut_setup_clip(1, 2, nil, loop_end_time)
+
+  -- Update limit for the begin time parameter
+  params:lookup_param("loop_begin_time").max = loop_end_time - audio_clip.MIN_LOOP_DURATION
+end
+
+
 -- For shortening the label strings of parameters so that the value doesn't
 -- overlap with the label. Just removing spaces after commas & ")" and also
 -- changing remaining spaces to half spaces for a slight improvement.
@@ -309,12 +329,14 @@ function taweet_params.init()
   params:add_option("audio","\u{2009}\u{200A}Audio:", {}, 0)
   params:set_action(params.lookup["audio"], audio_changed_callback)
   
-  -- Adding some other params just to play around
-  --params:add_text("", "") -- A spacer
-  --params:add_separator("test params, for fun")
-  --params:add_number("something1", "something1", 20, 240,88)
-  --params:add_number("tempo", "tempo", 20, 240,88)
-
+  -- Audio clip parameters
+  params:add_text("", "") -- A spacer
+  params:add_separator("Audio Clip")
+  params:add_number("loop_begin_time", "Loop begin time:")
+  params:set_action(params.lookup["loop_begin_time"], loop_begin_time_changed_callback)
+  params:add_number("loop_end_time",   "  Loop end time:")
+  params:set_action(params.lookup["loop_end_time"], loop_end_time_changed_callback)
+  
   -- Adding easy way to get to presets (PSET) screen
   params:add_text("spacerId2", "", "") -- A spacer
   params:add_separator("Presets (PSET)")

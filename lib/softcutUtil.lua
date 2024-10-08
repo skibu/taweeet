@@ -62,6 +62,39 @@ function softcut_setup_voices_stereo(voice_index_l, voice_index_r, length)
   buffer_index_r = 2
   softcut_setup_voice_mono(voice_index_r, 2, length)
   softcut.pan(voice_index_l, 1)
+  
+  -- Since loading in new audio need to also update the loop begin and end time 
+  -- min and max values since the length of the audio has changed
+  local begin_time = params:lookup_param("loop_begin_time")
+  local end_time = params:lookup_param("loop_end_time")
+  begin_time.min = 0.0
+  begin_time.max = length - audio_clip.MIN_LOOP_DURATION
+  end_time.min = audio_clip.MIN_LOOP_DURATION
+  end_time.max = length
+  
+  -- And reset the begin and end times for the loop. If reading in a preset then
+  -- these values will be updated when those parameters are handled
+  begin_time.value = 0.0
+  end_time.value = length
+end
+
+
+-- Sets the audio loop begin and end times for the specified voices. Can set any
+-- of the function params to nil to not set that voice or value.
+function sofcut_setup_clip(voice_index_l, voice_index_r, loop_begin_time, loop_end_time)
+  -- For each non-nil voice...
+  local voices = {voice_index_l, voice_index_r}
+  for _, voice in ipairs(voices) do
+    -- Set loop start
+    if loop_begin_time ~= nil then
+      softcut.loop_start(voice, loop_begin_time)
+    end
+    
+    -- Set loop end
+    if loop_end_time ~= nil then
+      softcut.loop_end(voice, loop_end_time)
+    end
+  end
 end
 
 
