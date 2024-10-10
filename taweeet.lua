@@ -42,27 +42,27 @@ function init()
 end
 
 
-local graph_y_pos = 14
+local graph_y_pos = 12
 
 -- Draws the custom audio graph 
 function draw_audio_graph()
   screen.clear()
   
   -- Draw custom part of the audio graph screen towards the top
-  screen.move(screen.WIDTH/2, graph_y_pos-3)
+  screen.move(screen.WIDTH/2, 9)
   screen.level(screen.levels.HIGHLIGHT)
-  screen.font_face(6)
-  screen.font_size(12)
-  screen.aa(1) -- Since font size 12 or greater
-  screen.text_center("Adjust Audio Clip")
+  screen.font_face(5)
+  screen.font_size(10)
+  screen.aa(0) -- Set to 1 if font size 12 or greater
+  screen.text_center(get_species_name())
   
   -- Draw horizontal line at bottom of the custom area
-  screen.level(12) -- Use lighter line so don't get incorrect other faint line beneath it
-  screen.line_width(1.0)
-  screen.aa(0)
-  screen.move(10, graph_y_pos-1)
-  screen.line (118, graph_y_pos-1)
-  screen.stroke()
+  --screen.level(12) -- Use lighter line so don't get incorrect other faint line beneath it
+  --screen.line_width(1.0)
+  --screen.aa(0)
+  --screen.move(10, graph_y_pos-1)
+  --screen.line (118, graph_y_pos-1)
+  --screen.stroke()
   
   -- Draw the actual audio graph, which will go below graph_y_pos
   audio_clip.draw_audio_graph()
