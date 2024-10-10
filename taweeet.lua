@@ -89,10 +89,16 @@ end
   
 
 function key(n, down)
-  -- If in clip audio mode then use clip_adui.key() to handle key press
+  -- If in clip audio mode then use audio_clip.key() to handle key press
   if audio_clip.enabled() then
-    audio_clip.key(n, down)
-    return
+    if n ~= 1 then
+      audio_clip.key(n, down)
+      return
+    else
+      -- Key1 hit while audio clip screen is enabled. Need to turn off the audio 
+      -- clip display to stop the current position from being updated
+      audio_clip.reset()
+    end
   end
   
   if n == 1 and down == 0 then
