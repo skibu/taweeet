@@ -46,6 +46,7 @@ local graph_y_pos = 12
 
 -- Draws the custom audio graph 
 function draw_audio_graph()
+  log.debug("In taweeet draw_audio_graph() and doing screen.clear()")
   screen.clear()
   
   -- Draw custom part of the audio graph screen towards the top
@@ -62,6 +63,8 @@ end
 
 
 function redraw()
+  log.debug("Redrawing via taweeet.lua redraw()")
+
   -- If in clip audio mode then display custom audio clip screen
   if audio_clip.enabled() then
     draw_audio_graph()
@@ -73,8 +76,7 @@ function redraw()
   -- current species.
   if display_splash_screen_once_via_redraw(1.0) then return end
   
-  log.debug("Redrawing via taweeet.lua redraw()")
-  startIntro()
+  start_intro()
 end
   
 
@@ -94,7 +96,7 @@ function key(n, down)
   if n == 1 and down == 0 then
     -- Need to halt intro if it is running. Otherwise the intro 
     -- clock could cause the the into to overwrite the menu screen.
-    haltIntro()
+    halt_intro()
     
     -- Key1 up so jump to edit params directly. Don't require it
     -- to be a short press so that it is easier. And use key up
@@ -145,18 +147,21 @@ end
 
 
 function enc(n, delta)
-  --log.debug("Taweeet encoder changed n=" .. n .. " delta=" .. delta)
+  log.debug("Taweeet encoder changed n=" .. n .. " delta=" .. delta)
   
   -- Enable audio_clip mode if encoder 2 or 3 are turned, and currently not enabled
   if n ~= 1 and not audio_clip.enabled() then
     -- Make sure not in intro anymore
-    haltIntro()
+    halt_intro()
     
     -- Switch to the audio clip screen. Use voices 1 & 2 from softcut
     local duration = audio_clip.wav_file_duration(get_species_wav_filename())
     local loop_begin = params:get("loop_begin_time")
     local loop_end = params:get("loop_end_time")
     audio_clip.enable(1, 2, duration, graph_y_pos, loop_begin, loop_end, loop_begin_end_times_callback)
+        
+    -- Redraw now so that the screen will be cleared and the header info will be drawn
+    redraw()
     
     -- Don't want the initial encoder turn to acctually change values
     -- so simply return
