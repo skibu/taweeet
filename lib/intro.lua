@@ -361,7 +361,7 @@ intro_clock = metro.init(intro_tick, 0.04, -1)
 -- getting the PNG in png_file_exists_callback() in species.lua
 function startIntro()
   if png_ready() then
-    log.print("Starting graphical intro since image now available")
+    log.print("Starting graphical intro since image fully available")
     intro_clock:start()
   end
 end
