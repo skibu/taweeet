@@ -56,18 +56,8 @@ function draw_audio_graph()
   screen.aa(0) -- Set to 1 if font size 12 or greater
   screen.text_center(get_species_name())
   
-  -- Draw horizontal line at bottom of the custom area
-  --screen.level(12) -- Use lighter line so don't get incorrect other faint line beneath it
-  --screen.line_width(1.0)
-  --screen.aa(0)
-  --screen.move(10, graph_y_pos-1)
-  --screen.line (118, graph_y_pos-1)
-  --screen.stroke()
-  
   -- Draw the actual audio graph, which will go below graph_y_pos
   audio_clip.draw_audio_graph()
-  
-  screen.update()
 end
 
 
