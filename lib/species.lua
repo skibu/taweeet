@@ -66,7 +66,7 @@ local function png_file_exists_callback(filename)
     screen.extents(global_species_data.image_buffer)
 
   -- Start the intro animation, but only if in app mode
-  startIntroIfInAppMode()
+  start_intro_if_in_app_mode()
 end
 
 

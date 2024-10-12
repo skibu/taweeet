@@ -359,7 +359,7 @@ intro_clock = metro.init(intro_tick, 0.04, -1)
 -- but only does so if the PNG is ready. To be called by redraw(). If PNG
 -- not yet ready then the intro will be initiated by the completino of
 -- getting the PNG in png_file_exists_callback() in species.lua
-function startIntro()
+function start_intro()
   if png_ready() then
     log.print("Starting graphical intro since image fully available")
     intro_clock:start()
@@ -371,9 +371,9 @@ end
 -- but only does so if in app mode instead of menu mode. To be called
 -- by the callback when PNG fully loaded. If in menu mode then the
 -- intro will be initiated by redraw()
-function startIntroIfInAppMode()
+function start_intro_if_in_app_mode()
   if not _menu.mode then
-    log.debug("startIntroIfInAppMode() Starting intro since in app mode, not menu mode")
+    log.debug("start_intro_if_in_app_mode() Starting intro since in app mode, not menu mode")
     intro_clock:start()
   end
 end
@@ -381,8 +381,8 @@ end
 
 -- Stops the intro counter. Useful for when jumping to parameter menu.
 -- Okay to call even if intro not currently running.
-function haltIntro()
-  log.debug("Halting intro if still running")
+function halt_intro()
+  log.print("Halting intro if still running")
   intro_clock:stop()
 end
 
