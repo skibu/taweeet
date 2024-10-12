@@ -27,7 +27,7 @@ taweet_params = include "lib/parameters"
 
 function init()
   -- While developing code enable log.debugging
-  log.enable_debug(true)
+  log.enable_debug(false)
 
   -- Display splash screen as soon as possible during startup
   display_splash_screen()
