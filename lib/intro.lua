@@ -22,7 +22,7 @@ local intro_clock
 
 
 -- Draws mask onto image buffer. To be called via screen.draw_to() so that the drawing
--- will occur on the specified image. The image is assumed to be full screen, which is
+-- will occur on the specified image buffer. The image is assumed to be full screen, which is
 -- 128x64.
 local function draw_binoc_mask_on_image(dark_level) 
   -- Draw the whole image at the dark level
@@ -35,7 +35,7 @@ local function draw_binoc_mask_on_image(dark_level)
   local image_width = get_species_image_width()
   if image_width < screen_width then
     -- Draw left black rectanble
-    screen.level(0)
+    screen.level(screen.levels.DARK)
     screen.rect(0, 0, (screen_width + mask_extra_width - image_width)/2, screen_height)
     screen.fill()
     
@@ -45,8 +45,9 @@ local function draw_binoc_mask_on_image(dark_level)
     screen.fill()
   end
   
-  -- Draw two level 15 circles to make it sort of look like a view through binoculars
-  screen.level(15)
+  -- Draw two screen.levels.LIGHT (level 15) circles to make it sort of look like a view 
+  -- through binoculars
+  screen.level(screen.levels.LIGHT)
   local r = (screen_height / 2) - 6
   local y = screen_height / 2
   screen.circle(screen_width/4 + mask_extra_width/2, y, r)
@@ -111,7 +112,8 @@ local function draw_binocular_mask(current_count)
   -- Restore to default mode
   screen.blend_mode("default")
 
-  -- Return false to indicate not done with binocular animation. They haven't been fully faded out yet.
+  -- Return false to indicate not done with binocular animation. Binoc mask hasn't 
+  -- fully faded out yet.
   return false 
 end
 
@@ -214,7 +216,7 @@ local function draw_vertically_moving_species_name(current_count)
   screen.fill()
   
   -- Draw species name on screen over the rectangle
-  screen.level(15)
+  screen.level(screen.levels.LIGHT)
   screen.aa(1) -- Found that font 7 Roboto-Bold at large size looks better with anti-aliasing
   screen.move(rectangle_x + horiz_padding, rectangle_y - 2 + font_size)
   screen.text(get_species_name())
@@ -237,8 +239,16 @@ local function swirling_intro_callback(current_count)
     return
   end
   
-    -- Always start by clearing screen
+  -- Always start by clearing screen
   screen.clear()
+  
+  -- Since using a draw mode of "darken" for the mask, need the pixels to 
+  -- actually be black, not just cleared. Otherwise the result will include
+  -- white parts of the mask since they are the darkest of the images
+  -- being combined.
+  screen.level(screen.levels.DARK)
+  screen.rect(0, 0, screen.WIDTH, screen.HEIGHT)
+  screen.fill()
 
   -- Draw frame of swirling species image
   local done_with_animation = draw_frame_of_swirling_image(current_count)

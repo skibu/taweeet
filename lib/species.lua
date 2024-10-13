@@ -108,7 +108,7 @@ function select_random_png()
   -- First should make sure that intro is not running. Otherwise could select a new
   -- PNG file while the intro still continues to run, and then the intro will try
   -- to display the new PNG before it is ready.
-  haltIntro()
+  halt_intro()
   
   -- Pick random png url for the species
   local image_data_list = global_species_data.imageDataList
