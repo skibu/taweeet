@@ -11,8 +11,10 @@ local rectangle_y_pause = 58 -- Where species name text rectangle should pause
 local pause_ticks = 30       -- How long to pause there
 local mask_extra_width = 20  -- extra width so can make binoculars pan a bit horizontally
 local initial_x_offset = 8   -- How far to slide image horizontally after swirling completed
-local start_fading_binocs_ticks = swirling_ticks + slide_ticks
-local fade_binocs_ticks = 80 -- Number of ticks to take to fade out binoculars
+local binocs_start_fading_ticks = swirling_ticks + slide_ticks
+local binocs_ticks_per_cycle = 70 
+local binocs_swing_from_center = 4 -- must be less than or equal to mask_extra_width/2
+local binocs_fade_ticks = 80 -- Number of ticks to take to fade out binoculars
 
 
 -- Timer for doing intro animation. Once started, the animation intro clock runs until
@@ -74,27 +76,32 @@ end
 local done_with_swishing_binocs = false
 
 -- Draw the binocular mask onto the screen so that it (hopefully) looks as if looking 
--- through binoculars. The binoculars swing back and forth by swing_from_center
+-- through binoculars. The binoculars swing back and forth by binocs_swing_from_center
 -- and based on the current_count
 local function draw_binocular_mask(current_count)
   -- x_offset is how far horizontally from center the binoculars should be drawn.
   -- By using current_count to affect x_offset, the binoculars will hopefully
   -- appear to be scanning left and right.
   if current_count == 1 then done_with_swishing_binocs = false end
-  local ticks_per_cycle = 50
-  local swing_from_center = 5 -- must be less than or equal to mask_extra_width/2
   local x_offset = 0
   if not done_with_swishing_binocs then
-    x_offset = swing_from_center * math.sin(math.rad(current_count*360/ticks_per_cycle))
-    if math.floor(x_offset + 0.5) == 0 and current_count >= start_fading_binocs_ticks then
+    -- Use a sine wave to smoothly move binocs back and forth
+    local minus_1_to_1 = math.sin(math.rad(current_count*360/binocs_ticks_per_cycle))
+    -- Make binocs stay more at the ends by using square root of minus_1_to_1.
+    -- Nevermind, found this was too jerky so removed it
+    --minus_1_to_1 = (minus_1_to_1 < 0 and -1 or 1) * math.sqrt(math.abs(minus_1_to_1))
+    
+    -- Determine the offset in pixels
+    x_offset = binocs_swing_from_center * minus_1_to_1
+    if math.floor(x_offset + 0.5) == 0 and current_count >= binocs_start_fading_ticks then
       done_with_swishing_binocs = true
     end
   end
   
   -- Determine the dark level for the mask. Using a dark level of 0 masks using black. 
   -- If dark level is 15 or greater then there is no need to draw a mask so return true.
-  local dark_level = current_count < start_fading_binocs_ticks and 0 
-                      or 15 * (current_count - start_fading_binocs_ticks) / fade_binocs_ticks 
+  local dark_level = current_count < binocs_start_fading_ticks and 0 
+                      or 15 * (current_count - binocs_start_fading_ticks) / binocs_fade_ticks 
   dark_level = math.floor(dark_level + 0.5) -- levels usually need to be integers
   if dark_level >= 15 then return true end
 
