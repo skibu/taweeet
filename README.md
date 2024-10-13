@@ -9,6 +9,8 @@ So it is a lot to explore!
 When the script starts you get a random species with random photo and sound clip for that species. 
 Serendipity. Not intended to be completely intentional.
 
+<img src="images/intro_with_puffin.png" width="400">
+
 To change things from the main screen:
  * Key2 - new random species, along with new photo and audio
  * Key3 - new random photo and audio for the current species
