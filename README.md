@@ -1,5 +1,5 @@
 # Taweeet
-<img src="images/splash.png" width="200">
+<img src="https://github.com/skibu/taweeet/blob/main/images/splash.png" width="200">
 
 ### A Norns script for exploring bird sound
 Taweeet allows one to display images of various birds and play with corresponding audio clips. 
@@ -9,7 +9,7 @@ So it is a lot to explore!
 When the script starts you get a random species with random photo and sound clip for that species. 
 Serendipity. Not intended to be completely intentional.
 
-<img src="images/intro_with_puffin.png" width="400">
+<img src="https://github.com/skibu/taweeet/blob/main/images/intro_with_puffin.png" width="400">
 
 To change things from the main screen:
  * Key2 - new random species, along with new photo and audio
@@ -17,6 +17,9 @@ To change things from the main screen:
  * Key1 - jump to the [Parameters Menu](#parameters_menu) where you can change all the parameters to specific values.
    Not only can you.
  * Encoder2 or 3 - Switch to [Audio Clipping Screen](#audio_clipping_screen)
+
+### Video
+See https://m.youtube.com/watch?v=yvc-pNiVl_c
 
 ### Current state of Taweeet
 It works! But only part of the full feature set has been implemented. Currently you can select a species, 
@@ -42,7 +45,7 @@ To learn more see the [Norns documentation](https://monome.org/docs/norns/)
 ### Parameters Menu
 The Parameters Menu allows one to edit individual parameters.
 
-<img src="images/parameter_screen.png" width="400">
+<img src="https://github.com/skibu/taweeet/blob/main/images/parameter_screen.png" width="400">
 
 * Use Encoder2 so select the parameter
 * Use Encoder3 to select new value for the parameter
@@ -56,7 +59,7 @@ portion of the audio cilp.
 
 A vertical line sweeps across the display to indicate the current point of the audio clip being played.
 
-<img src="images/tufted_puffin_audio_clip.png" width="400">
+<img src="https://github.com/skibu/taweeet/blob/main/images/tufted_puffin_audio_clip.png" width="400">
 
 * Encoder2 to adjust the begin time of the audio clip
 * Encoder3 to adjust the end time of the audio clip
